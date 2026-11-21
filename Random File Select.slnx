@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Random File Select.Tests/Random File Select.Tests.csproj" />
+  </Folder>
+  <Project Path="Random File Select/Random File Select.csproj" />
+</Solution>

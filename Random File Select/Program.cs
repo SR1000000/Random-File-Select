@@ -1,0 +1,21 @@
+namespace Random_File_Select
+{
+    internal static class Program
+    {
+        /// <summary>
+        ///  The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
+        {
+            // To customize application configuration such as set high DPI settings or default font,
+            // see https://aka.ms/applicationconfiguration.
+            ApplicationConfiguration.Initialize();
+            
+            // Force dark mode across the entire app
+            Application.SetColorMode(SystemColorMode.Dark);
+            
+            Application.Run(new Form1());
+        }
+    }
+}
