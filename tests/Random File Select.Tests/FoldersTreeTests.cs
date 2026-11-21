@@ -49,9 +49,9 @@ public class FoldersTreeTests : IDisposable
         FolderTreeBuilder.Scan(roots, filter, CancellationToken.None);
 
     private static FolderScanResult Result(
-        int matching = 1, int processed = 1, int roots = 1, int merged = 0,
+        int matching = 1, int processed = 1, int roots = 1,
         int inaccessible = 0, int link = 0, int missing = 0, double seconds = 1.0) =>
-        new([], matching, processed, roots, merged, new SkippedCounts(inaccessible, link, missing),
+        new([], matching, processed, roots, new SkippedCounts(inaccessible, link, missing),
             TimeSpan.FromSeconds(seconds));
 
     // ---------- FileFilter ----------
@@ -160,13 +160,19 @@ public class FoldersTreeTests : IDisposable
     // ---------- nested roots ----------
 
     [Fact]
-    public void RemoveNestedRoots_dropsNested_keepsOrder_countsMerged()
+    public void PartitionRoots_dedupesExact_splitsCoveringAndNested_keepsOrder()
     {
-        (IReadOnlyList<string> roots, int merged) = FolderTreeBuilder.RemoveNestedRoots(
-            [@"D:\Music\Rock", @"D:\Video", @"D:\Music", @"D:\Music2", @"D:\video\sub"]);
+        (IReadOnlyList<string> ordered, IReadOnlyList<string> covering, HashSet<string> nested) =
+            FolderTreeBuilder.PartitionRoots(
+                [@"D:\Music\Rock", @"D:\Video", @"D:\Music", @"D:\Music2", @"D:\video\sub", @"D:\VIDEO", @"D:\Music\Pop\"]);
 
-        Assert.Equal([@"D:\Video", @"D:\Music", @"D:\Music2"], roots);
-        Assert.Equal(2, merged);
+        Assert.Equal(
+            [@"D:\Music\Rock", @"D:\Video", @"D:\Music", @"D:\Music2", @"D:\video\sub", @"D:\Music\Pop"], ordered);
+        Assert.Equal([@"D:\Video", @"D:\Music", @"D:\Music2"], covering);
+        Assert.Equal(3, nested.Count);
+        Assert.Contains(@"D:\Music\Rock", nested);
+        Assert.Contains(@"D:\video\sub", nested);
+        Assert.Contains(@"D:\Music\Pop", nested);
     }
 
     [Theory]
@@ -189,11 +195,178 @@ public class FoldersTreeTests : IDisposable
 
         FolderScanResult result = Scan(Txt(), root, nested);
 
-        Assert.Equal(1, result.MergedRootCount);
-        Assert.Single(result.Roots);
+        Assert.Equal(2, result.Roots.Count);
         Assert.Equal(1, result.MatchingFolderCount);
         Assert.Equal(2, result.ProcessedCount);
-        Assert.Equal(1, result.Roots[0].SubtreeFileCount);
+        FolderNode nestedTop = result.Roots[1];
+        Assert.Equal(1, nestedTop.SubtreeFileCount);
+        FolderNode parentChild = Assert.Single(result.Roots[0].Children);
+        Assert.NotSame(nestedTop, parentChild);
+        Assert.Same(nestedTop.Children, parentChild.Children);
+        Assert.True(nestedTop.Files == parentChild.Files);
+    }
+
+    [Fact]
+    public void Scan_childRootListedBeforeParent_followsInputOrder()
+    {
+        string root = Dir("music");
+        string nested = Dir("music", "rock");
+        Touch(nested, "a.txt");
+
+        FolderScanResult result = Scan(Txt(), nested, root);
+
+        Assert.Equal([nested, root], result.Roots.Select(r => r.FullPath));
+    }
+
+    [Fact]
+    public void Scan_grandchildRoots_allShown_countsPhysical()
+    {
+        string a = Dir("a");
+        string b = Dir("a", "b");
+        string c = Dir("a", "b", "c");
+        Touch(a, "1.txt");
+        Touch(b, "2.txt");
+        Touch(c, "3.txt");
+
+        FolderScanResult result = Scan(Txt(), a, b, c);
+
+        Assert.Equal(3, result.Roots.Count);
+        Assert.Equal(3, result.ProcessedCount);
+        Assert.Equal(3, result.MatchingFolderCount);
+    }
+
+    [Fact]
+    public void Scan_emptyNestedRoot_stillShown()
+    {
+        string a = Dir("a");
+        Touch(a, "1.txt");
+        string empty = Dir("a", "empty");
+
+        FolderScanResult result = Scan(Txt(), a, empty);
+
+        Assert.Equal(2, result.Roots.Count);
+        Assert.Equal(0, result.Roots[1].SubtreeFileCount);
+    }
+
+    [Fact]
+    public void Scan_nestedRootWithoutOwnFiles_childrenRelabelledPerView()
+    {
+        string a = Dir("a");
+        string b = Dir("a", "b");
+        string c = Dir("a", "b", "c");
+        Touch(c, "x.txt");
+
+        FolderScanResult result = Scan(Txt(), a, b);
+
+        FolderNode top = result.Roots[0];
+        FolderNode nestedTop = result.Roots[1];
+        Assert.Equal(b, nestedTop.DisplayName);
+        Assert.Equal("c", Assert.Single(nestedTop.Children).DisplayName);
+        Assert.Equal(Path.Combine("b", "c"), Assert.Single(top.Children).DisplayName);
+        Assert.Equal(1, result.MatchingFolderCount);
+    }
+
+    [Fact]
+    public void Scan_trailingSeparatorRoot_notRescanned()
+    {
+        string a = Dir("a");
+        string b = Dir("a", "b");
+        Touch(b, "x.txt");
+
+        FolderScanResult result = Scan(Txt(), a, b + Path.DirectorySeparatorChar);
+
+        Assert.Equal(2, result.Roots.Count);
+        Assert.Equal(2, result.ProcessedCount);
+    }
+
+    [Fact]
+    public void Scan_nestedRootUnderSystemFolder_fallbackScans()
+    {
+        string a = Dir("a");
+        string sys = Dir("a", "Sys");
+        string n = Dir("a", "Sys", "N");
+        Touch(n, "x.txt");
+        File.SetAttributes(sys, FileAttributes.System | FileAttributes.Directory);
+
+        FolderScanResult result = Scan(Txt(), a, n);
+
+        Assert.Equal(2, result.Roots.Count);
+        Assert.Equal(1, result.Roots[1].SubtreeFileCount);
+        Assert.Equal(0, result.Roots[0].SubtreeFileCount);
+    }
+
+    [Fact]
+    public void Scan_fallbackNestedGrandchildren_notScannedTwice()
+    {
+        string a = Dir("a");
+        string sys = Dir("a", "Sys");
+        string b = Dir("a", "Sys", "B");
+        string c = Dir("a", "Sys", "B", "C");
+        Touch(b, "1.txt");
+        Touch(c, "2.txt");
+        File.SetAttributes(sys, FileAttributes.System | FileAttributes.Directory);
+
+        FolderScanResult result = Scan(Txt(), a, b, c);
+
+        Assert.Equal(3, result.Roots.Count);
+        Assert.Equal(3, result.ProcessedCount);
+        Assert.Equal(2, result.MatchingFolderCount);
+    }
+
+    [Fact]
+    public void Scan_nestedRootUnderLink_fallbackScans()
+    {
+        string a = Dir("a");
+        string target = Dir("target");
+        string n = Dir("target", "N");
+        Touch(n, "x.txt");
+        string link = Path.Combine(a, "link");
+        try
+        {
+            Directory.CreateSymbolicLink(link, target);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            return;
+        }
+
+        FolderScanResult result = Scan(Txt(), a, Path.Combine(link, "N"));
+
+        Assert.Equal(2, result.Roots.Count);
+        Assert.Equal(1, result.Skipped.Link);
+    }
+
+    [Fact]
+    public void Scan_nestedRootThatIsLink_notRetried()
+    {
+        string a = Dir("a");
+        string target = Dir("target");
+        Touch(target, "x.txt");
+        string link = Path.Combine(a, "L");
+        try
+        {
+            Directory.CreateSymbolicLink(link, target);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            return;
+        }
+
+        FolderScanResult result = Scan(Txt(), a, link);
+
+        Assert.Single(result.Roots);
+        Assert.Equal(1, result.Skipped.Link);
+    }
+
+    [Fact]
+    public void Scan_missingCoveringRoot_bothSkipped()
+    {
+        string missing = Path.Combine(_temp, "missing");
+
+        FolderScanResult result = Scan(Txt(), missing, Path.Combine(missing, "sub"));
+
+        Assert.Empty(result.Roots);
+        Assert.Equal(2, result.Skipped.Missing);
     }
 
     // ---------- tree shape ----------
@@ -536,14 +709,12 @@ public class FoldersTreeTests : IDisposable
         Assert.Equal("Loaded 1 folder with matching files (0 skipped) in 0.8 s", text);
     }
 
-    [Theory]
-    [InlineData(1, "(3 skipped, 1 nested root merged)")]
-    [InlineData(2, "(3 skipped, 2 nested roots merged)")]
-    public void FormatCompleted_mergedRoots(int merged, string expectedFragment)
+    [Fact]
+    public void FormatCompleted_noMergedText()
     {
-        string text = FolderTreeStatusFormatter.FormatCompleted(Result(matching: 5, merged: merged, missing: 3));
+        string text = FolderTreeStatusFormatter.FormatCompleted(Result(matching: 5, missing: 3));
 
-        Assert.Contains(expectedFragment, text);
+        Assert.DoesNotContain("merged", text);
     }
 
     [Fact]
@@ -568,7 +739,7 @@ public class FoldersTreeTests : IDisposable
     public void FormatTooltip_containsBreakdown()
     {
         string tip = FolderTreeStatusFormatter.FormatTooltip(
-            Result(processed: 1500, roots: 2, merged: 1, inaccessible: 1, link: 2, missing: 3, seconds: 2.4));
+            Result(processed: 1500, roots: 2, inaccessible: 1, link: 2, missing: 3, seconds: 2.4));
 
         Assert.Contains("Folders processed: 1,500", tip);
         Assert.Contains("Skipped: 6", tip);
@@ -576,7 +747,7 @@ public class FoldersTreeTests : IDisposable
         Assert.Contains("Link or junction: 2", tip);
         Assert.Contains("Missing: 3", tip);
         Assert.Contains("Roots scanned: 2", tip);
-        Assert.Contains("Nested roots merged: 1", tip);
+        Assert.DoesNotContain("merged", tip);
         Assert.Contains("Elapsed: 2.4 s", tip);
     }
 }

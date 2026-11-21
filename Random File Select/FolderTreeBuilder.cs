@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Security;
 using System.Text;
@@ -18,14 +19,12 @@ public sealed record FolderNode(
     ImmutableArray<RetainedFile> Files,
     int SubtreeFileCount)
 {
-    /// <summary>Number of matching files directly inside this folder.</summary>
     public int OwnFileCount => Files.Length;
 }
 
 /// <summary>Counts of skipped directories by reason; <see cref="Total"/> is their sum.</summary>
 public sealed record SkippedCounts(int Inaccessible, int Link, int Missing)
 {
-    /// <summary>Total skipped directories across all reasons.</summary>
     public int Total => Inaccessible + Link + Missing;
 }
 
@@ -35,7 +34,6 @@ public sealed record FolderScanResult(
     int MatchingFolderCount,
     int ProcessedCount,
     int RootsScanned,
-    int MergedRootCount,
     SkippedCounts Skipped,
     TimeSpan Elapsed);
 
@@ -46,31 +44,29 @@ public sealed record FolderScanResult(
 /// </summary>
 public static class FolderTreeBuilder
 {
-    /// <summary>Drops roots lying under another root (or duplicating an earlier one), preserving order, and reports how many were merged.</summary>
-    public static (IReadOnlyList<string> Roots, int MergedCount) RemoveNestedRoots(IEnumerable<string> roots)
+    /// <summary>Trims trailing separators, drops case-insensitive duplicates, and splits roots into input-ordered Ordered, Covering (not under another root), and Nested (under another root).</summary>
+    public static (IReadOnlyList<string> Ordered, IReadOnlyList<string> Covering, HashSet<string> Nested) PartitionRoots(IEnumerable<string> roots)
     {
-        List<string> all = roots.ToList();
-        var kept = new List<string>();
-
-        for (int i = 0; i < all.Count; i++)
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ordered = new List<string>();
+        foreach (string raw in roots)
         {
-            bool drop = false;
-            for (int j = 0; j < all.Count && !drop; j++)
-            {
-                if (i == j)
-                    continue;
-
-                if (IsUnder(all[i], all[j]))
-                    drop = true;
-                else if (j < i && string.Equals(all[i], all[j], StringComparison.OrdinalIgnoreCase))
-                    drop = true;
-            }
-
-            if (!drop)
-                kept.Add(all[i]);
+            string path = Path.TrimEndingDirectorySeparator(raw);
+            if (seen.Add(path))
+                ordered.Add(path);
         }
 
-        return (kept, all.Count - kept.Count);
+        var covering = new List<string>();
+        var nested = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string path in ordered)
+        {
+            if (ordered.Any(other => !ReferenceEquals(other, path) && IsUnder(path, other)))
+                nested.Add(path);
+            else
+                covering.Add(path);
+        }
+
+        return (ordered, covering, nested);
     }
 
     /// <summary>True when child is strictly inside parent; handles drive/UNC roots that already end with a separator.</summary>
@@ -83,7 +79,7 @@ public static class FolderTreeBuilder
         return child.Length > prefix.Length && child.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Scans roots (nested ones removed) with the filter, reporting processed count and current path; throws on cancellation.</summary>
+    /// <summary>Scans covering roots once (caching nested roots reached), scans unreached nested roots directly, and returns every root as its own top-level node in input order; throws on cancellation.</summary>
     public static FolderScanResult Scan(
         IEnumerable<string> roots,
         FileFilter filter,
@@ -91,14 +87,27 @@ public static class FolderTreeBuilder
         Action<int, string>? progress = null)
     {
         var stopwatch = Stopwatch.StartNew();
-        (IReadOnlyList<string> keptRoots, int merged) = RemoveNestedRoots(roots);
+        (IReadOnlyList<string> ordered, IReadOnlyList<string> covering, HashSet<string> nested) = PartitionRoots(roots);
 
-        var scanner = new Scanner(filter, cancellationToken, progress);
-        var rootNodes = new List<FolderNode>();
-        foreach (string root in keptRoots)
+        var scanner = new Scanner(filter, nested, cancellationToken, progress);
+        var scanned = new Dictionary<string, FolderNode>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string root in covering)
         {
-            FolderNode? node = scanner.ScanRoot(root);
-            if (node is not null)
+            if (scanner.ScanRoot(root) is { } node)
+                scanned[root] = node;
+        }
+
+        foreach (string root in nested.OrderBy(p => p.Length))
+        {
+            if (!scanner.WasReached(root) && scanner.ScanRoot(root) is { } node)
+                scanned[root] = node;
+        }
+
+        var rootNodes = new List<FolderNode>(ordered.Count);
+        foreach (string root in ordered)
+        {
+            if (scanned.TryGetValue(root, out FolderNode? node) || scanner.TryGetNestedRootNode(root, out node))
                 rootNodes.Add(node);
         }
 
@@ -108,7 +117,6 @@ public static class FolderTreeBuilder
             scanner.MatchingFolderCount,
             scanner.ProcessedCount,
             rootNodes.Count,
-            merged,
             new SkippedCounts(scanner.Inaccessible, scanner.Link, scanner.Missing),
             stopwatch.Elapsed);
     }
@@ -120,7 +128,6 @@ public static class FolderTreeBuilder
         return result != 0 ? result : StringComparer.Ordinal.Compare(a, b);
     }
 
-    /// <summary>True for exceptions that mean a directory cannot be inspected and should be skipped.</summary>
     private static bool IsSkippable(Exception ex) =>
         ex is UnauthorizedAccessException or IOException or SecurityException or PathTooLongException
             or ArgumentException or NotSupportedException;
@@ -129,10 +136,21 @@ public static class FolderTreeBuilder
     private static bool IsLink(DirectoryInfo directory) =>
         (directory.Attributes & FileAttributes.ReparsePoint) != 0 && directory.LinkTarget is not null;
 
+    /// <summary>Mutable accumulator for files and child nodes collected during a single directory enumeration.</summary>
     private sealed record DirectoryScan(List<RetainedFile> Files, List<FolderNode> Nodes);
 
-    private sealed class Scanner(FileFilter filter, CancellationToken token, Action<int, string>? progress)
+    /// <summary>Stateful worker that walks the directory tree, enforces filter and skip rules, and accumulates scan counters.</summary>
+    private sealed class Scanner(FileFilter filter, HashSet<string> nestedRoots, CancellationToken token, Action<int, string>? progress)
     {
+        /// <summary>Nested roots reached during a pass: key present means reached, null value means reached but skipped.</summary>
+        private readonly Dictionary<string, FolderNode?> _nestedRootNodes = new(nestedRoots.Count, StringComparer.OrdinalIgnoreCase);
+
+        public bool HasUnreachedNestedRoots => _nestedRootNodes.Count < nestedRoots.Count;
+        public bool WasReached(string path) => _nestedRootNodes.ContainsKey(path);
+
+        public bool TryGetNestedRootNode(string path, [NotNullWhen(true)] out FolderNode? node) =>
+            _nestedRootNodes.TryGetValue(path, out node) && node is not null;
+
         private static readonly EnumerationOptions Options = new()
         {
             AttributesToSkip = FileAttributes.System,
@@ -178,7 +196,7 @@ public static class FolderTreeBuilder
             return scan is null ? null : Wrap(directory.FullName, directory.FullName, scan);
         }
 
-        /// <summary>Records a visited directory and reports progress.</summary>
+        /// <summary>Increments the processed counter and reports progress.</summary>
         private void Visit(string path)
         {
             ProcessedCount++;
@@ -222,6 +240,10 @@ public static class FolderTreeBuilder
                 token.ThrowIfCancellationRequested();
                 Visit(sub.FullName);
 
+                bool isNestedRoot = HasUnreachedNestedRoots && nestedRoots.Contains(sub.FullName);
+                if (isNestedRoot)
+                    _nestedRootNodes[sub.FullName] = null;
+
                 try
                 {
                     if (IsLink(sub))
@@ -240,8 +262,15 @@ public static class FolderTreeBuilder
                 if (child is null)
                     continue;
 
+                FolderNode? nestedNode = null;
+                if (isNestedRoot)
+                {
+                    nestedNode = Wrap(sub.FullName, sub.FullName, child);
+                    _nestedRootNodes[sub.FullName] = nestedNode;
+                }
+
                 if (child.Files.Count > 0)
-                    nodes.Add(Wrap(sub.FullName, sub.Name, child));
+                    nodes.Add(nestedNode ?? Wrap(sub.FullName, sub.Name, child));
                 else
                     nodes.AddRange(child.Nodes);
             }
@@ -267,7 +296,7 @@ public static class FolderTreeBuilder
             }
         }
 
-        /// <summary>Builds a node from a directory's own files and shown descendants, relabeling and sorting children.</summary>
+        /// <summary>Builds a node from a directory's own files and shown descendants, relabeling and sorting children; the node may be cached as a top-level nested root.</summary>
         private FolderNode Wrap(string fullPath, string displayName, DirectoryScan scan)
         {
             if (scan.Files.Count > 0)
@@ -314,21 +343,14 @@ public static class FolderTreeStatusFormatter
 
         string folderWord = result.MatchingFolderCount == 1 ? "folder" : "folders";
         string detail = $"{skipped} skipped";
-        if (result.MergedRootCount > 0)
-        {
-            string mergedWord = result.MergedRootCount == 1 ? "root" : "roots";
-            detail += $", {result.MergedRootCount:N0} nested {mergedWord} merged";
-        }
 
         return string.Create(
             CultureInfo.InvariantCulture,
             $"Loaded {result.MatchingFolderCount:N0} {folderWord} with matching files ({detail}) in {elapsed}");
     }
 
-    /// <summary>Formats the cancellation message.</summary>
     public static string FormatCancelled(TimeSpan elapsed) => $"Load cancelled after {FormatElapsed(elapsed)}";
 
-    /// <summary>Formats the failure message as a single line.</summary>
     public static string FormatFaulted(Exception error) =>
         $"Load failed: {Regex.Replace(error.Message, @"\s+", " ").Trim()}";
 
@@ -342,12 +364,10 @@ public static class FolderTreeStatusFormatter
         text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"  Link or junction: {result.Skipped.Link:N0}"));
         text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"  Missing: {result.Skipped.Missing:N0}"));
         text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Roots scanned: {result.RootsScanned:N0}"));
-        text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Nested roots merged: {result.MergedRootCount:N0}"));
         text.Append($"Elapsed: {FormatElapsed(result.Elapsed)}");
         return text.ToString();
     }
 
-    /// <summary>Formats the tooltip text for a folder node showing its own matching file count and subtree count (if non-zero).</summary>
     public static string FormatNodeTooltip(FolderNode folder)
     {
         int own = folder.OwnFileCount;
@@ -366,7 +386,6 @@ public static class FolderTreeStatusFormatter
             $"{own:N0} {fileWord}");
     }
 
-    /// <summary>Formats the status strip text showing the count of files displayed from the activated folder.</summary>
     public static string FormatFolderActivated(int fileCount, string folderName)
     {
         string fileWord = fileCount == 1 ? "file" : "files";
