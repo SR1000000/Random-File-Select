@@ -7,27 +7,28 @@ public sealed class FoldersTreeController
     private readonly ToolStripStatusLabel _statusLabel;
     private readonly ToolStripProgressBar _progressBar;
     private readonly Form _owner;
-    private readonly ListView _filesListView;
+    private readonly FilesViewController _filesView;
     private readonly CheckBox _subFoldersCheckBox;
+    private readonly List<TreeNode> _matchingNodes = [];
     private bool _isActivating;
 
     /// <summary>True after a non-PlusMinus left double-click until the next message-loop turn; used to cancel BeforeExpand/Collapse.</summary>
     private bool _suppressExpandCollapse;
 
-    /// <summary>Binds the controller to the TreeView, status label, progress bar, owner form, files ListView, and subfolders checkbox, and wires double-click expand/collapse suppression on the tree.</summary>
+    /// <summary>Binds the controller to the TreeView, status label, progress bar, owner form, files view controller, and subfolders checkbox, and wires double-click expand/collapse suppression on the tree.</summary>
     public FoldersTreeController(
         TreeView tree,
         ToolStripStatusLabel statusLabel,
         ToolStripProgressBar progressBar,
         Form owner,
-        ListView filesListView,
+        FilesViewController filesView,
         CheckBox subFoldersCheckBox)
     {
         _tree = tree;
         _statusLabel = statusLabel;
         _progressBar = progressBar;
         _owner = owner;
-        _filesListView = filesListView;
+        _filesView = filesView;
         _subFoldersCheckBox = subFoldersCheckBox;
 
         _tree.MouseDown += OnTreeMouseDown;
@@ -81,11 +82,11 @@ public sealed class FoldersTreeController
         }
     }
 
-    /// <summary>Locks the owner form and runs a marquee progress bar while asynchronously populating the files ListView and updating the status strip.</summary>
-    public async Task OnFolderActivatedAsync(TreeNode node)
+    /// <summary>Locks the owner form and runs a marquee progress bar while asynchronously populating the files ListView and updating the status strip; returns false when skipped, otherwise true.</summary>
+    public async Task<bool> OnFolderActivatedAsync(TreeNode node)
     {
         if (_isActivating || node.Tag is not FolderNode folder)
-            return;
+            return false;
 
         _isActivating = true;
 
@@ -113,26 +114,12 @@ public sealed class FoldersTreeController
         {
             bool includeSubfolders = _subFoldersCheckBox.Checked;
             ListViewItem[] items = await Task.Run(() =>
-            {
-                int capacity = includeSubfolders ? folder.SubtreeFileCount : folder.Files.Length;
-                var list = new List<ListViewItem>(capacity);
-                AppendFolderItems(folder, includeSubfolders, list);
-                return list.ToArray();
-            });
+                FilesViewController.BuildItems(folder, includeSubfolders));
 
-            _filesListView.BeginUpdate();
-            try
-            {
-                _filesListView.Items.Clear();
-                if (items.Length > 0)
-                    _filesListView.Items.AddRange(items);
-            }
-            finally
-            {
-                _filesListView.EndUpdate();
-            }
+            _filesView.SetItems(items);
 
             SetStatus(FolderTreeStatusFormatter.FormatFolderActivated(items.Length, folder.DisplayName), folder.FullPath);
+            return true;
         }
         finally
         {
@@ -144,32 +131,22 @@ public sealed class FoldersTreeController
         }
     }
 
-    /// <summary>
-    /// Traverses folder files and appends ListViewItems with filename in Text and fullpath in Tag and ToolTipText.
-    /// Recursively traverses child nodes when includeSubfolders is true.
-    /// </summary>
-    private static void AppendFolderItems(FolderNode folder, bool includeSubfolders, List<ListViewItem> items)
+    /// <summary>Uniformly picks a cached node with matching files, selects and reveals it, and activates it; returns true if the files ListView was populated.</summary>
+    public async Task<bool> SelectRandomFolderAsync()
     {
-        foreach (RetainedFile file in folder.Files)
-        {
-            string fullPath = Path.Combine(folder.FullPath, file.FileName);
-            items.Add(new ListViewItem(file.FileName)
-            {
-                Tag = fullPath,
-                ToolTipText = fullPath
-            });
-        }
+        if (_matchingNodes.Count == 0)
+            return false;
 
-        if (includeSubfolders)
-        {
-            foreach (FolderNode child in folder.Children)
-                AppendFolderItems(child, true, items);
-        }
+        TreeNode node = _matchingNodes[Random.Shared.Next(_matchingNodes.Count)];
+        _tree.SelectedNode = node;
+        node.EnsureVisible();
+        return await OnFolderActivatedAsync(node);
     }
 
-    /// <summary>Replaces the tree contents with one top-level node per root, inside balanced BeginUpdate/EndUpdate.</summary>
+    /// <summary>Replaces the tree contents with one top-level node per root, refreshing the matching-folder cache, inside balanced BeginUpdate/EndUpdate.</summary>
     private void Populate(FolderScanResult result)
     {
+        _matchingNodes.Clear();
         _tree.BeginUpdate();
         try
         {
@@ -183,14 +160,18 @@ public sealed class FoldersTreeController
         }
     }
 
-    /// <summary>Recursively converts a folder node into a TreeNode carrying the FolderNode in its Tag and its tooltip.</summary>
-    private static TreeNode CreateNode(FolderNode folder)
+    /// <summary>Recursively converts a folder node into a TreeNode carrying the FolderNode in its Tag and its tooltip, caching nodes that directly contain matching files.</summary>
+    private TreeNode CreateNode(FolderNode folder)
     {
         var node = new TreeNode(folder.DisplayName)
         {
             Tag = folder,
             ToolTipText = FolderTreeStatusFormatter.FormatNodeTooltip(folder)
         };
+
+        if (folder.OwnFileCount > 0)
+            _matchingNodes.Add(node);
+
         foreach (FolderNode child in folder.Children)
             node.Nodes.Add(CreateNode(child));
 

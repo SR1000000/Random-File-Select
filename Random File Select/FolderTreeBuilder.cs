@@ -8,10 +8,16 @@ using System.Text.RegularExpressions;
 
 namespace Random_File_Select;
 
-/// <summary>Compact metadata for one matching file, captured from the directory listing (no file content is read).</summary>
-public sealed record RetainedFile(string FileName, DateTime LastWriteTime, DateTime LastAccessTime, long Length);
+/// <summary>Compact metadata for one matching file, captured from the directory listing; LastAccessTime is updated when the app opens the file.</summary>
+public sealed record RetainedFile(string FileName, DateTime LastWriteTime, DateTime LastAccessTime, long Length)
+{
+    public DateTime LastAccessTime { get; set; } = LastAccessTime;
+}
 
-/// <summary>Immutable shown folder: display label, true full path, shown descendants, and its own matching files.</summary>
+/// <summary>A file shown in the files ListView: its full path plus the RetainedFile instance shared with its FolderNode.</summary>
+public sealed record FileListEntry(string FullPath, RetainedFile File);
+
+/// <summary>Shown folder: display label, true full path, shown descendants, and its own matching files (immutable except each RetainedFile.LastAccessTime, which the app updates).</summary>
 public sealed record FolderNode(
     string DisplayName,
     string FullPath,

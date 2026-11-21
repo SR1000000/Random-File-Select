@@ -6,6 +6,7 @@ namespace Random_File_Select
         private AppSettings _settings = new();
         private readonly FiltersController filtersController;
         private readonly RootFoldersController rootFoldersController;
+        private readonly FilesViewController filesViewController;
         private readonly FoldersTreeController foldersTreeController;
 
         public Form1()
@@ -19,12 +20,19 @@ namespace Random_File_Select
                 RootFolders_folderBrowserDialog_Edit,
                 this);
 
+            filesViewController = new FilesViewController(
+                Files_listView,
+                Settings_trackBar_LastAccessWeight,
+                checkBox_InstantOpen,
+                BottomStatusStrip_StatusLabel,
+                this);
+
             foldersTreeController = new FoldersTreeController(
                 Folders_treeView,
                 BottomStatusStrip_StatusLabel,
                 BottomStatusStrip_ProgressBar,
                 this,
-                Files_listView,
+                filesViewController,
                 Settings_checkBox_Subfolders);
 
             rootFoldersController.SelectionChanged += (_, _) => UpdateRootFolderButtons();
@@ -228,9 +236,9 @@ namespace Random_File_Select
 
         }
 
-        private void Folders_toolStripButton_Random_Click(object sender, EventArgs e)
+        private async void Folders_toolStripButton_Random_Click(object sender, EventArgs e)
         {
-
+            AutoPickFileIfEnabled(await foldersTreeController.SelectRandomFolderAsync());
         }
 
         private void Folders_toolStripButton_Next_Click(object sender, EventArgs e)
@@ -250,7 +258,7 @@ namespace Random_File_Select
 
         private void Files_toolStripButton_Random_Click(object sender, EventArgs e)
         {
-
+            filesViewController.SelectRandom();
         }
 
         private void Files_toolStripButton_Next_Click(object sender, EventArgs e)
@@ -263,20 +271,28 @@ namespace Random_File_Select
 
         }
 
-        /// <summary>Activates the double-clicked folder node, locking the form while populating the files ListView.</summary>
+        /// <summary>Activates the double-clicked folder node, locking the form while populating the files ListView, and auto-picks a file when that setting is enabled.</summary>
         private async void Folders_treeView_DblClick(object sender, EventArgs e)
         {
             TreeViewHitTestInfo hit = Folders_treeView.HitTest(Folders_treeView.PointToClient(Cursor.Position));
             if (hit.Node is not null
                 && hit.Location is TreeViewHitTestLocations.Label or TreeViewHitTestLocations.RightOfLabel)
             {
-                await foldersTreeController.OnFolderActivatedAsync(hit.Node);
+                AutoPickFileIfEnabled(await foldersTreeController.OnFolderActivatedAsync(hit.Node));
             }
         }
 
+        /// <summary>Picks a random file when a folder was just activated and "Choose a random file after selecting a directory" is checked.</summary>
+        private void AutoPickFileIfEnabled(bool activated)
+        {
+            if (activated && checkBox_InstantFile.Checked)
+                filesViewController.SelectRandom();
+        }
+
+        /// <summary>Runs the file indicated by the activated item using default Windows behavior.</summary>
         private void Files_listView_Activate(object sender, EventArgs e)
         {
-
+            filesViewController.OpenSelected();
         }
     }
 }
