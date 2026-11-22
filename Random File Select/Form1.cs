@@ -211,7 +211,7 @@ namespace Random_File_Select
         }
 
         /// <summary>Loads checked root folders into the folder tree using the current filters; does nothing if none are checked.</summary>
-        private void Folders_toolStripButton_Reload_Click(object sender, EventArgs e)
+        private void Folders_toolStripButton_Load_Click(object sender, EventArgs e)
         {
             IReadOnlyList<string> checkedPaths = rootFoldersController.CheckedPaths;
             if (checkedPaths.Count == 0)
@@ -231,9 +231,9 @@ namespace Random_File_Select
             foldersTreeController.Load(checkedPaths, filter);
         }
 
-        private void Folders_toolStripButton_Prev_Click(object sender, EventArgs e)
+        private async void Folders_toolStripButton_Prev_Click(object sender, EventArgs e)
         {
-
+            AutoPickFileIfEnabled(await foldersTreeController.SelectRelativeFolderAsync(-1));
         }
 
         private async void Folders_toolStripButton_Random_Click(object sender, EventArgs e)
@@ -241,19 +241,19 @@ namespace Random_File_Select
             AutoPickFileIfEnabled(await foldersTreeController.SelectRandomFolderAsync());
         }
 
-        private void Folders_toolStripButton_Next_Click(object sender, EventArgs e)
+        private async void Folders_toolStripButton_Next_Click(object sender, EventArgs e)
         {
-
+            AutoPickFileIfEnabled(await foldersTreeController.SelectRelativeFolderAsync(1));
         }
 
-        private void Files_toolStripButton_Reload_Click(object sender, EventArgs e)
+        private async void Files_toolStripButton_Reload_Click(object sender, EventArgs e)
         {
-
+            await foldersTreeController.ReloadFilesFromSelectedFolderAsync();
         }
 
         private void Files_toolStripButton_Prev_Click(object sender, EventArgs e)
         {
-
+            filesViewController.SelectRelative(-1);
         }
 
         private void Files_toolStripButton_Random_Click(object sender, EventArgs e)
@@ -263,7 +263,7 @@ namespace Random_File_Select
 
         private void Files_toolStripButton_Next_Click(object sender, EventArgs e)
         {
-
+            filesViewController.SelectRelative(1);
         }
 
         private void RootFolders_folderBrowserDialog_Edit_HelpRequest(object sender, EventArgs e)
@@ -294,5 +294,6 @@ namespace Random_File_Select
         {
             filesViewController.OpenSelected();
         }
+
     }
 }

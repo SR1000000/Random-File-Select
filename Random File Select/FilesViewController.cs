@@ -53,7 +53,7 @@ public sealed class FilesViewController
         }
     }
 
-    /// <summary>Picks an item by tournament selection on Last Accessed, then selects, focuses, and reveals it, and opens it if Instantly Open is checked; appends "File opened." to the status strip when that open succeeds; returns false when the list is empty.</summary>
+    /// <summary>Picks an item by tournament selection on Last Accessed, then selects it (and opens when Instantly Open is checked); returns false when the list is empty.</summary>
     public bool SelectRandom()
     {
         int count = _listView.Items.Count;
@@ -68,15 +68,33 @@ public sealed class FilesViewController
             _lastAccessWeight.Maximum,
             Random.Shared);
 
+        return SelectItemAtIndex(index, randomChoice: true);
+    }
+
+    /// <summary>Steps to the adjacent list item (wrapping) from the current selection, then selects it (and opens when Instantly Open is checked); returns false when the list is empty or nothing is selected.</summary>
+    public bool SelectRelative(int delta)
+    {
+        int count = _listView.Items.Count;
+        if (count == 0 || _listView.SelectedIndices.Count == 0)
+            return false;
+
+        int index = WrapFileIndex(_listView.SelectedIndices[0], delta, count);
+        return SelectItemAtIndex(index, randomChoice: false);
+    }
+
+    /// <summary>Selects, focuses, and reveals the item at index; sets status text for random vs sequential choice; opens when Instantly Open is checked.</summary>
+    private bool SelectItemAtIndex(int index, bool randomChoice)
+    {
+        if ((uint)index >= (uint)_listView.Items.Count)
+            return false;
+
         ListViewItem item = _listView.Items[index];
         item.Selected = true;
         item.Focused = true;
         item.EnsureVisible();
         _listView.Focus();
 
-        _statusLabel.Text = string.Create(
-            CultureInfo.InvariantCulture,
-            $"Randomly chose \"{item.Text}\".");
+        SetFileStatus(item, randomChoice);
 
         if (_instantOpen.Checked && OpenItem(item))
             _statusLabel.Text += "  File opened.";
@@ -84,13 +102,29 @@ public sealed class FilesViewController
         return true;
     }
 
-    /// <summary>Opens the first selected item, if any.</summary>
+    /// <summary>Steps index by delta within [0, count), wrapping at both ends.</summary>
+    private static int WrapFileIndex(int index, int delta, int count)
+        => ((index + delta) % count + count) % count;
+
+    /// <summary>Sets the status strip to random or manual selection for the given list item.</summary>
+    private void SetFileStatus(ListViewItem item, bool randomChoice)
+    {
+        _statusLabel.Text = randomChoice
+            ? string.Create(CultureInfo.InvariantCulture, $"Randomly chose \"{item.Text}\".")
+            : string.Create(CultureInfo.InvariantCulture, $"Selected \"{item.Text}\".");
+    }
+
+    /// <summary>Opens the first selected item when present; sets manual-selection status and appends "File opened." when launch succeeds.</summary>
     public void OpenSelected()
     {
         if (_listView.SelectedItems.Count == 0)
             return;
 
-        OpenItem(_listView.SelectedItems[0]);
+        ListViewItem item = _listView.SelectedItems[0];
+        SetFileStatus(item, randomChoice: false);
+
+        if (OpenItem(item))
+            _statusLabel.Text += "  File opened.";
     }
 
     /// <summary>Opens the item's file with the default shell handler and, on success, sets its stored Last Accessed time to now; reports errors except a user-cancelled UAC prompt; returns whether the default handler was started.</summary>

@@ -120,9 +120,12 @@
             // 
             // BottomStatusStrip_StatusLabel
             // 
+            BottomStatusStrip_StatusLabel.AutoSize = false;
             BottomStatusStrip_StatusLabel.Name = "BottomStatusStrip_StatusLabel";
-            BottomStatusStrip_StatusLabel.Size = new Size(69, 17);
+            BottomStatusStrip_StatusLabel.Size = new Size(521, 17);
+            BottomStatusStrip_StatusLabel.Spring = true;
             BottomStatusStrip_StatusLabel.Text = "Placeholder";
+            BottomStatusStrip_StatusLabel.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // BottomStatusStrip_ProgressBar
             // 
@@ -507,7 +510,7 @@
             Folders_toolStripButton_Load.Name = "Folders_toolStripButton_Load";
             Folders_toolStripButton_Load.Size = new Size(78, 22);
             Folders_toolStripButton_Load.Text = "Load Folders";
-            Folders_toolStripButton_Load.Click += Folders_toolStripButton_Reload_Click;
+            Folders_toolStripButton_Load.Click += Folders_toolStripButton_Load_Click;
             // 
             // toolStripSeparator1
             // 
@@ -581,8 +584,8 @@
             Files_toolStripButton_Load.Image = (Image)resources.GetObject("Files_toolStripButton_Load.Image");
             Files_toolStripButton_Load.ImageTransparentColor = Color.Magenta;
             Files_toolStripButton_Load.Name = "Files_toolStripButton_Load";
-            Files_toolStripButton_Load.Size = new Size(63, 22);
-            Files_toolStripButton_Load.Text = "Load Files";
+            Files_toolStripButton_Load.Size = new Size(73, 22);
+            Files_toolStripButton_Load.Text = "Reload Files";
             Files_toolStripButton_Load.Click += Files_toolStripButton_Reload_Click;
             // 
             // toolStripSeparator2

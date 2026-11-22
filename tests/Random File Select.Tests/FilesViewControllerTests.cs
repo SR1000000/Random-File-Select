@@ -22,4 +22,18 @@ public class FilesViewControllerTests
         Assert.Same(retained, entry.File);
         Assert.Equal(Path.Combine(@"C:\dir", "a.txt"), entry.FullPath);
     }
+
+    [Fact]
+    public void BuildItems_includeSubfolders_collectsDescendantFiles()
+    {
+        var childFile = new RetainedFile("nested.txt", default, default, 1);
+        var child = new FolderNode("sub", @"C:\parent\sub", [], ImmutableArray.Create(childFile), SubtreeFileCount: 1);
+        var parent = new FolderNode("parent", @"C:\parent", [child], ImmutableArray<RetainedFile>.Empty, SubtreeFileCount: 1);
+
+        ListViewItem[] items = FilesViewController.BuildItems(parent, includeSubfolders: true);
+
+        Assert.Single(items);
+        Assert.Equal("nested.txt", items[0].Text);
+        Assert.Equal(Path.Combine(@"C:\parent\sub", "nested.txt"), ((FileListEntry)items[0].Tag!).FullPath);
+    }
 }
