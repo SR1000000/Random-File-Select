@@ -1,13 +1,13 @@
 This is a work in progress.
 
-Built on .NET 10 + Windows Forms
+Built on .NET 10 + Windows Forms.  (.NET 10 either requires users to install .NET 10 or the self-contained executable (not requiring .NET 10) is 70MB vs 100KB)(A consideration for downporting to .NET 4.8.1 which comes with every Windows 11 installation)
 
-Junctions (Folders with ReparsePoints) are ignored.  That includes virtual drives and symlinked folders.
+Junctions (Folders with ReparsePoints) are ignored.  That includes virtual drives and symlinked folders, though cloud-synced folders should be supported.
 
-System files and folders are ignored.
+System files and folders are ignored (Mostly because Recycle Bin and other system folders interfere with directory scan, might be worth revisiting if selection within System folders is necessary).
 
 This program is built to be portable only.  Do not place it in a folder which requires admin privileges to write to (Program Files, etc.) or settings will not be saved.
 
-Last Access is so sensitive, opening File Properties pings it, mousing over a video or zip file too long pings it.
+Last Accessed Time as a Windows property is very fragile: opening File Properties pings it, mousing over a video or zip file too long pings it, it can be turned off and is off by default in some Windows editions, updating timestamps can be delayed up to 1 hour.  Despite all this, it is natively supported in Windowsand mostly works, so I use it here.
 
-Layout inspired by Random File Picker by Marcin Szeniak
+Layout inspired by Random File Picker by Marcin Szeniak.

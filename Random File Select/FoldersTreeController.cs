@@ -5,7 +5,6 @@ public sealed class FoldersTreeController
 {
     private readonly TreeView _tree;
     private readonly ToolStripStatusLabel _statusLabel;
-    private readonly ToolStripProgressBar _progressBar;
     private readonly Form _owner;
     private readonly FilesViewController _filesView;
     private readonly CheckBox _subFoldersCheckBox;
@@ -15,18 +14,16 @@ public sealed class FoldersTreeController
     /// <summary>True after a non-PlusMinus left double-click until the next message-loop turn; used to cancel BeforeExpand/Collapse.</summary>
     private bool _suppressExpandCollapse;
 
-    /// <summary>Binds the controller to the TreeView, status label, progress bar, owner form, files view controller, and subfolders checkbox, and wires double-click expand/collapse suppression on the tree.</summary>
+    /// <summary>Binds the controller to the TreeView, status label, owner form, files view controller, and subfolders checkbox, and wires double-click expand/collapse suppression on the tree.</summary>
     public FoldersTreeController(
         TreeView tree,
         ToolStripStatusLabel statusLabel,
-        ToolStripProgressBar progressBar,
         Form owner,
         FilesViewController filesView,
         CheckBox subFoldersCheckBox)
     {
         _tree = tree;
         _statusLabel = statusLabel;
-        _progressBar = progressBar;
         _owner = owner;
         _filesView = filesView;
         _subFoldersCheckBox = subFoldersCheckBox;
@@ -96,7 +93,7 @@ public sealed class FoldersTreeController
     internal static bool ShouldPopulateListView(FolderNode folder, bool includeSubfolders)
         => includeSubfolders ? folder.SubtreeFileCount > 0 : folder.OwnFileCount > 0;
 
-    /// <summary>Locks the owner form and runs a marquee progress bar while asynchronously populating the files ListView and updating the status strip; returns false when skipped, otherwise true.</summary>
+    /// <summary>Locks the owner form while asynchronously populating the files ListView and updating the status strip; returns false when skipped, otherwise true.</summary>
     public async Task<bool> OnFolderActivatedAsync(TreeNode node)
     {
         if (_isActivating || node.Tag is not FolderNode folder)
@@ -108,9 +105,9 @@ public sealed class FoldersTreeController
 
         _isActivating = true;
 
-        // Disable only the form's top-level controls, except the one hosting the progress bar (the status strip),
-        // so the marquee stays enabled and animates. Remember which were enabled so they can be restored.
-        Control? statusHost = _progressBar.Owner;
+        // Disable only the form's top-level controls, except the status strip, so status text can update.
+        // Remember which were enabled so they can be restored.
+        Control? statusHost = _statusLabel.Owner;
         var disabledControls = new List<Control>();
         foreach (Control control in _owner.Controls)
         {
@@ -123,10 +120,7 @@ public sealed class FoldersTreeController
         _owner.UseWaitCursor = true;
         _statusLabel.Text = "Populating...";
         _statusLabel.ToolTipText = string.Empty;
-        _progressBar.Style = ProgressBarStyle.Marquee;
-        _progressBar.MarqueeAnimationSpeed = 30;
-        _progressBar.Visible = true;
-        _progressBar.Owner?.Refresh(); // paint the bar before the work starts
+        _statusLabel.Owner?.Refresh();
 
         try
         {
@@ -140,7 +134,6 @@ public sealed class FoldersTreeController
         }
         finally
         {
-            _progressBar.Visible = false;
             _owner.UseWaitCursor = false;
             foreach (Control control in disabledControls)
                 control.Enabled = true;

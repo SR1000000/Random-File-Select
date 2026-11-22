@@ -31,7 +31,6 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             Bottom_StatusStrip = new StatusStrip();
             BottomStatusStrip_StatusLabel = new ToolStripStatusLabel();
-            BottomStatusStrip_ProgressBar = new ToolStripProgressBar();
             FileDetails_listView = new ListView();
             FileDetails_Header_Directory = new ColumnHeader();
             FileDetails_Header_Filename = new ColumnHeader();
@@ -85,6 +84,9 @@
             splitContainerLower = new SplitContainer();
             RootFolders_folderBrowserDialog_Edit = new FolderBrowserDialog();
             RootFolders_folderBrowserDialog_Add = new FolderBrowserDialog();
+            Settings_checkBox_NightMode = new CheckBox();
+            Settings_button_ClearLog = new Button();
+            Settings_button_About = new Button();
             Bottom_StatusStrip.SuspendLayout();
             TableLayoutPanel_Top.SuspendLayout();
             TopPanel_groupBoxLeft.SuspendLayout();
@@ -110,28 +112,21 @@
             // 
             // Bottom_StatusStrip
             // 
-            Bottom_StatusStrip.Items.AddRange(new ToolStripItem[] { BottomStatusStrip_StatusLabel, BottomStatusStrip_ProgressBar });
-            Bottom_StatusStrip.Location = new Point(0, 516);
+            Bottom_StatusStrip.Items.AddRange(new ToolStripItem[] { BottomStatusStrip_StatusLabel });
+            Bottom_StatusStrip.Location = new Point(0, 580);
             Bottom_StatusStrip.Name = "Bottom_StatusStrip";
             Bottom_StatusStrip.ShowItemToolTips = true;
-            Bottom_StatusStrip.Size = new Size(638, 22);
+            Bottom_StatusStrip.Size = new Size(646, 22);
             Bottom_StatusStrip.TabIndex = 0;
             Bottom_StatusStrip.Text = "statusStrip1";
             // 
             // BottomStatusStrip_StatusLabel
             // 
-            BottomStatusStrip_StatusLabel.AutoSize = false;
             BottomStatusStrip_StatusLabel.Name = "BottomStatusStrip_StatusLabel";
-            BottomStatusStrip_StatusLabel.Size = new Size(521, 17);
+            BottomStatusStrip_StatusLabel.Size = new Size(631, 17);
             BottomStatusStrip_StatusLabel.Spring = true;
             BottomStatusStrip_StatusLabel.Text = "Placeholder";
             BottomStatusStrip_StatusLabel.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // BottomStatusStrip_ProgressBar
-            // 
-            BottomStatusStrip_ProgressBar.Name = "BottomStatusStrip_ProgressBar";
-            BottomStatusStrip_ProgressBar.Size = new Size(100, 16);
-            BottomStatusStrip_ProgressBar.Visible = false;
             // 
             // FileDetails_listView
             // 
@@ -142,25 +137,26 @@
             FileDetails_listView.Location = new Point(0, 0);
             FileDetails_listView.MultiSelect = false;
             FileDetails_listView.Name = "FileDetails_listView";
-            FileDetails_listView.Size = new Size(638, 125);
+            FileDetails_listView.Size = new Size(646, 129);
             FileDetails_listView.TabIndex = 1;
             FileDetails_listView.UseCompatibleStateImageBehavior = false;
             FileDetails_listView.View = View.Details;
+            FileDetails_listView.ItemActivate += FileDetails_listView_Activate;
             // 
             // FileDetails_Header_Directory
             // 
             FileDetails_Header_Directory.Text = "Directory";
-            FileDetails_Header_Directory.Width = 300;
+            FileDetails_Header_Directory.Width = 150;
             // 
             // FileDetails_Header_Filename
             // 
             FileDetails_Header_Filename.Text = "Filename";
-            FileDetails_Header_Filename.Width = 200;
+            FileDetails_Header_Filename.Width = 300;
             // 
             // FileDetails_Header_LastAccess
             // 
             FileDetails_Header_LastAccess.Text = "Last Accessed";
-            FileDetails_Header_LastAccess.Width = 100;
+            FileDetails_Header_LastAccess.Width = 120;
             // 
             // TableLayoutPanel_Top
             // 
@@ -173,12 +169,11 @@
             TableLayoutPanel_Top.Controls.Add(TopPanel_groupBoxRight, 2, 0);
             TableLayoutPanel_Top.Dock = DockStyle.Fill;
             TableLayoutPanel_Top.Location = new Point(0, 0);
-            TableLayoutPanel_Top.MaximumSize = new Size(0, 223);
-            TableLayoutPanel_Top.MinimumSize = new Size(0, 223);
+            TableLayoutPanel_Top.MinimumSize = new Size(0, 240);
             TableLayoutPanel_Top.Name = "TableLayoutPanel_Top";
             TableLayoutPanel_Top.RowCount = 1;
             TableLayoutPanel_Top.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            TableLayoutPanel_Top.Size = new Size(638, 223);
+            TableLayoutPanel_Top.Size = new Size(646, 250);
             TableLayoutPanel_Top.TabIndex = 2;
             // 
             // TopPanel_groupBoxLeft
@@ -188,7 +183,7 @@
             TopPanel_groupBoxLeft.Dock = DockStyle.Fill;
             TopPanel_groupBoxLeft.Location = new Point(3, 3);
             TopPanel_groupBoxLeft.Name = "TopPanel_groupBoxLeft";
-            TopPanel_groupBoxLeft.Size = new Size(200, 217);
+            TopPanel_groupBoxLeft.Size = new Size(200, 244);
             TopPanel_groupBoxLeft.TabIndex = 0;
             TopPanel_groupBoxLeft.TabStop = false;
             TopPanel_groupBoxLeft.Text = "Root folders";
@@ -202,7 +197,7 @@
             RootFolders_checkedListBox.IntegralHeight = false;
             RootFolders_checkedListBox.Location = new Point(3, 51);
             RootFolders_checkedListBox.Name = "RootFolders_checkedListBox";
-            RootFolders_checkedListBox.Size = new Size(194, 163);
+            RootFolders_checkedListBox.Size = new Size(194, 190);
             RootFolders_checkedListBox.TabIndex = 3;
             // 
             // panel2
@@ -264,7 +259,7 @@
             TopPanel_groupBoxCenter.Dock = DockStyle.Fill;
             TopPanel_groupBoxCenter.Location = new Point(209, 3);
             TopPanel_groupBoxCenter.Name = "TopPanel_groupBoxCenter";
-            TopPanel_groupBoxCenter.Size = new Size(222, 217);
+            TopPanel_groupBoxCenter.Size = new Size(222, 244);
             TopPanel_groupBoxCenter.TabIndex = 1;
             TopPanel_groupBoxCenter.TabStop = false;
             TopPanel_groupBoxCenter.Text = "Filters";
@@ -281,7 +276,7 @@
             // label7
             // 
             label7.AutoSize = true;
-            label7.Location = new Point(0, 104);
+            label7.Location = new Point(3, 104);
             label7.Name = "label7";
             label7.Size = new Size(118, 15);
             label7.TabIndex = 11;
@@ -331,7 +326,7 @@
             // label6
             // 
             label6.Dock = DockStyle.Bottom;
-            label6.Location = new Point(3, 164);
+            label6.Location = new Point(3, 191);
             label6.Name = "label6";
             label6.Size = new Size(216, 50);
             label6.TabIndex = 6;
@@ -363,7 +358,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(0, 73);
+            label3.Location = new Point(3, 73);
             label3.Name = "label3";
             label3.Size = new Size(65, 15);
             label3.TabIndex = 2;
@@ -372,7 +367,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(0, 46);
+            label2.Location = new Point(3, 46);
             label2.Name = "label2";
             label2.Size = new Size(50, 15);
             label2.TabIndex = 1;
@@ -381,7 +376,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(0, 19);
+            label1.Location = new Point(3, 19);
             label1.Name = "label1";
             label1.Size = new Size(49, 15);
             label1.TabIndex = 0;
@@ -389,6 +384,9 @@
             // 
             // TopPanel_groupBoxRight
             // 
+            TopPanel_groupBoxRight.Controls.Add(Settings_button_About);
+            TopPanel_groupBoxRight.Controls.Add(Settings_button_ClearLog);
+            TopPanel_groupBoxRight.Controls.Add(Settings_checkBox_NightMode);
             TopPanel_groupBoxRight.Controls.Add(Settings_checkBox_Subfolders);
             TopPanel_groupBoxRight.Controls.Add(label4);
             TopPanel_groupBoxRight.Controls.Add(Settings_trackBar_LastAccessWeight);
@@ -398,7 +396,7 @@
             TopPanel_groupBoxRight.Dock = DockStyle.Fill;
             TopPanel_groupBoxRight.Location = new Point(437, 3);
             TopPanel_groupBoxRight.Name = "TopPanel_groupBoxRight";
-            TopPanel_groupBoxRight.Size = new Size(198, 217);
+            TopPanel_groupBoxRight.Size = new Size(206, 244);
             TopPanel_groupBoxRight.TabIndex = 2;
             TopPanel_groupBoxRight.TabStop = false;
             TopPanel_groupBoxRight.Text = "Settings";
@@ -414,7 +412,7 @@
             // 
             // label4
             // 
-            label4.Location = new Point(0, 153);
+            label4.Location = new Point(6, 179);
             label4.Name = "label4";
             label4.Size = new Size(201, 32);
             label4.TabIndex = 4;
@@ -423,7 +421,7 @@
             // Settings_trackBar_LastAccessWeight
             // 
             Settings_trackBar_LastAccessWeight.LargeChange = 2;
-            Settings_trackBar_LastAccessWeight.Location = new Point(0, 188);
+            Settings_trackBar_LastAccessWeight.Location = new Point(6, 205);
             Settings_trackBar_LastAccessWeight.Name = "Settings_trackBar_LastAccessWeight";
             Settings_trackBar_LastAccessWeight.Size = new Size(195, 45);
             Settings_trackBar_LastAccessWeight.TabIndex = 3;
@@ -474,8 +472,8 @@
             // 
             splitContainerMiddle.Panel2.Controls.Add(Files_listView);
             splitContainerMiddle.Panel2.Controls.Add(Files_toolStrip);
-            splitContainerMiddle.Size = new Size(638, 160);
-            splitContainerMiddle.SplitterDistance = 307;
+            splitContainerMiddle.Size = new Size(646, 193);
+            splitContainerMiddle.SplitterDistance = 310;
             splitContainerMiddle.TabIndex = 3;
             // 
             // Folders_treeView
@@ -486,7 +484,7 @@
             Folders_treeView.Location = new Point(0, 25);
             Folders_treeView.Name = "Folders_treeView";
             Folders_treeView.ShowNodeToolTips = true;
-            Folders_treeView.Size = new Size(303, 131);
+            Folders_treeView.Size = new Size(306, 164);
             Folders_treeView.TabIndex = 0;
             Folders_treeView.DoubleClick += Folders_treeView_DblClick;
             // 
@@ -498,7 +496,7 @@
             Folders_toolStrip.Items.AddRange(new ToolStripItem[] { Folders_toolStripButton_Load, toolStripSeparator1, toolStripLabel1, Folders_toolStripButton_Prev, Folders_toolStripButton_Random, Folders_toolStripButton_Next });
             Folders_toolStrip.Location = new Point(0, 0);
             Folders_toolStrip.Name = "Folders_toolStrip";
-            Folders_toolStrip.Size = new Size(303, 25);
+            Folders_toolStrip.Size = new Size(306, 25);
             Folders_toolStrip.TabIndex = 1;
             Folders_toolStrip.Text = "toolStrip1";
             // 
@@ -560,7 +558,7 @@
             Files_listView.MultiSelect = false;
             Files_listView.Name = "Files_listView";
             Files_listView.ShowItemToolTips = true;
-            Files_listView.Size = new Size(323, 131);
+            Files_listView.Size = new Size(328, 164);
             Files_listView.TabIndex = 3;
             Files_listView.UseCompatibleStateImageBehavior = false;
             Files_listView.View = View.List;
@@ -574,7 +572,7 @@
             Files_toolStrip.Items.AddRange(new ToolStripItem[] { Files_toolStripButton_Load, toolStripSeparator2, toolStripLabel2, Files_toolStripButton_Prev, Files_toolStripButton_Random, Files_toolStripButton_Next });
             Files_toolStrip.Location = new Point(0, 0);
             Files_toolStrip.Name = "Files_toolStrip";
-            Files_toolStrip.Size = new Size(323, 25);
+            Files_toolStrip.Size = new Size(328, 25);
             Files_toolStrip.TabIndex = 2;
             Files_toolStrip.Text = "toolStrip2";
             // 
@@ -643,8 +641,8 @@
             // splitContainerMain.Panel2
             // 
             splitContainerMain.Panel2.Controls.Add(splitContainerLower);
-            splitContainerMain.Size = new Size(638, 516);
-            splitContainerMain.SplitterDistance = 223;
+            splitContainerMain.Size = new Size(646, 580);
+            splitContainerMain.SplitterDistance = 250;
             splitContainerMain.TabIndex = 4;
             splitContainerMain.TabStop = false;
             // 
@@ -662,8 +660,8 @@
             // splitContainerLower.Panel2
             // 
             splitContainerLower.Panel2.Controls.Add(FileDetails_listView);
-            splitContainerLower.Size = new Size(638, 289);
-            splitContainerLower.SplitterDistance = 160;
+            splitContainerLower.Size = new Size(646, 326);
+            splitContainerLower.SplitterDistance = 193;
             splitContainerLower.TabIndex = 0;
             // 
             // RootFolders_folderBrowserDialog_Edit
@@ -675,11 +673,42 @@
             // 
             RootFolders_folderBrowserDialog_Add.AutoUpgradeEnabled = false;
             // 
+            // Settings_checkBox_NightMode
+            // 
+            Settings_checkBox_NightMode.AutoSize = true;
+            Settings_checkBox_NightMode.Location = new Point(6, 156);
+            Settings_checkBox_NightMode.Name = "Settings_checkBox_NightMode";
+            Settings_checkBox_NightMode.Size = new Size(90, 19);
+            Settings_checkBox_NightMode.TabIndex = 6;
+            Settings_checkBox_NightMode.Text = "Night Mode";
+            Settings_checkBox_NightMode.UseVisualStyleBackColor = true;
+            Settings_checkBox_NightMode.CheckedChanged += Settings_checkBox_NightMode_CheckChanged;
+            // 
+            // Settings_button_ClearLog
+            // 
+            Settings_button_ClearLog.Location = new Point(118, 156);
+            Settings_button_ClearLog.Name = "Settings_button_ClearLog";
+            Settings_button_ClearLog.Size = new Size(77, 23);
+            Settings_button_ClearLog.TabIndex = 7;
+            Settings_button_ClearLog.Text = "Clear Log";
+            Settings_button_ClearLog.UseVisualStyleBackColor = true;
+            Settings_button_ClearLog.Click += Settings_button_ClearLog_Click;
+            // 
+            // Settings_button_About
+            // 
+            Settings_button_About.Location = new Point(136, 133);
+            Settings_button_About.Name = "Settings_button_About";
+            Settings_button_About.Size = new Size(48, 23);
+            Settings_button_About.TabIndex = 8;
+            Settings_button_About.Text = "About";
+            Settings_button_About.UseVisualStyleBackColor = true;
+            Settings_button_About.Click += Settings_button_About_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(638, 538);
+            ClientSize = new Size(646, 602);
             Controls.Add(splitContainerMain);
             Controls.Add(Bottom_StatusStrip);
             MinimumSize = new Size(0, 207);
@@ -777,6 +806,8 @@
         private CheckBox Settings_checkBox_Subfolders;
         private FolderBrowserDialog RootFolders_folderBrowserDialog_Edit;
         private FolderBrowserDialog RootFolders_folderBrowserDialog_Add;
-        private ToolStripProgressBar BottomStatusStrip_ProgressBar;
+        private Button Settings_button_About;
+        private Button Settings_button_ClearLog;
+        private CheckBox Settings_checkBox_NightMode;
     }
 }

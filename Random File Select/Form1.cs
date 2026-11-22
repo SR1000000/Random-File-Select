@@ -22,6 +22,7 @@ namespace Random_File_Select
 
             filesViewController = new FilesViewController(
                 Files_listView,
+                FileDetails_listView,
                 Settings_trackBar_LastAccessWeight,
                 checkBox_InstantOpen,
                 BottomStatusStrip_StatusLabel,
@@ -30,7 +31,6 @@ namespace Random_File_Select
             foldersTreeController = new FoldersTreeController(
                 Folders_treeView,
                 BottomStatusStrip_StatusLabel,
-                BottomStatusStrip_ProgressBar,
                 this,
                 filesViewController,
                 Settings_checkBox_Subfolders);
@@ -295,5 +295,25 @@ namespace Random_File_Select
             filesViewController.OpenSelected();
         }
 
+        /// <summary>Runs the file indicated by the activated log item using default Windows behavior.</summary>
+        private void FileDetails_listView_Activate(object sender, EventArgs e)
+        {
+            filesViewController.OpenLogSelected();
+        }
+
+        private void Settings_button_About_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Settings_checkBox_NightMode_CheckChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Settings_button_ClearLog_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
