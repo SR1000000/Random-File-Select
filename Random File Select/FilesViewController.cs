@@ -144,6 +144,22 @@ public sealed class FilesViewController
         logItem.EnsureVisible();
     }
 
+    /// <summary>Removes all rows from the selection log and sets the status strip to "Log cleared."</summary>
+    public void ClearLog()
+    {
+        _logListView.BeginUpdate();
+        try
+        {
+            _logListView.Items.Clear();
+        }
+        finally
+        {
+            _logListView.EndUpdate();
+        }
+
+        _statusLabel.Text = "Log cleared.";
+    }
+
     /// <summary>Opens the file for the first selected log item; sets status text and appends "File opened." when launch succeeds. Never modifies the log.</summary>
     public void OpenLogSelected()
     {

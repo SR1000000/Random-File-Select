@@ -57,8 +57,6 @@
             label2 = new Label();
             label1 = new Label();
             TopPanel_groupBoxRight = new GroupBox();
-            Settings_button_About = new Button();
-            Settings_button_ClearLog = new Button();
             Settings_checkBox_DarkMode = new CheckBox();
             Settings_checkBox_Subfolders = new CheckBox();
             label4 = new Label();
@@ -66,6 +64,8 @@
             checkBox_InstantOpen = new CheckBox();
             checkBox_InstantFile = new CheckBox();
             checkBox_InstantLoadDir = new CheckBox();
+            Settings_button_About = new Button();
+            FileDetails_button_ClearLog = new Button();
             splitContainerMiddle = new SplitContainer();
             Folders_treeView = new TreeView();
             Folders_toolStrip = new ToolStrip();
@@ -85,8 +85,10 @@
             Files_toolStripButton_Next = new ToolStripButton();
             splitContainerMain = new SplitContainer();
             splitContainerLower = new SplitContainer();
+            panel1 = new Panel();
             RootFolders_folderBrowserDialog_Edit = new FolderBrowserDialog();
             RootFolders_folderBrowserDialog_Add = new FolderBrowserDialog();
+            FileDetails_checkBox_ExcludeDup = new CheckBox();
             Bottom_StatusStrip.SuspendLayout();
             TableLayoutPanel_Top.SuspendLayout();
             TopPanel_groupBoxLeft.SuspendLayout();
@@ -108,6 +110,7 @@
             splitContainerLower.Panel1.SuspendLayout();
             splitContainerLower.Panel2.SuspendLayout();
             splitContainerLower.SuspendLayout();
+            panel1.SuspendLayout();
             SuspendLayout();
             // 
             // Bottom_StatusStrip
@@ -116,14 +119,14 @@
             Bottom_StatusStrip.Location = new Point(0, 578);
             Bottom_StatusStrip.Name = "Bottom_StatusStrip";
             Bottom_StatusStrip.ShowItemToolTips = true;
-            Bottom_StatusStrip.Size = new Size(650, 22);
+            Bottom_StatusStrip.Size = new Size(644, 22);
             Bottom_StatusStrip.TabIndex = 0;
             Bottom_StatusStrip.Text = "statusStrip1";
             // 
             // BottomStatusStrip_StatusLabel
             // 
             BottomStatusStrip_StatusLabel.Name = "BottomStatusStrip_StatusLabel";
-            BottomStatusStrip_StatusLabel.Size = new Size(635, 17);
+            BottomStatusStrip_StatusLabel.Size = new Size(629, 17);
             BottomStatusStrip_StatusLabel.Spring = true;
             BottomStatusStrip_StatusLabel.Text = "Placeholder";
             BottomStatusStrip_StatusLabel.TextAlign = ContentAlignment.MiddleLeft;
@@ -134,10 +137,10 @@
             FileDetails_listView.Dock = DockStyle.Fill;
             FileDetails_listView.FullRowSelect = true;
             FileDetails_listView.HeaderStyle = ColumnHeaderStyle.Nonclickable;
-            FileDetails_listView.Location = new Point(0, 0);
+            FileDetails_listView.Location = new Point(0, 24);
             FileDetails_listView.MultiSelect = false;
             FileDetails_listView.Name = "FileDetails_listView";
-            FileDetails_listView.Size = new Size(650, 129);
+            FileDetails_listView.Size = new Size(644, 105);
             FileDetails_listView.TabIndex = 1;
             FileDetails_listView.UseCompatibleStateImageBehavior = false;
             FileDetails_listView.View = View.Details;
@@ -173,7 +176,7 @@
             TableLayoutPanel_Top.Name = "TableLayoutPanel_Top";
             TableLayoutPanel_Top.RowCount = 1;
             TableLayoutPanel_Top.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            TableLayoutPanel_Top.Size = new Size(650, 249);
+            TableLayoutPanel_Top.Size = new Size(644, 249);
             TableLayoutPanel_Top.TabIndex = 2;
             // 
             // TopPanel_groupBoxLeft
@@ -384,8 +387,6 @@
             // 
             // TopPanel_groupBoxRight
             // 
-            TopPanel_groupBoxRight.Controls.Add(Settings_button_About);
-            TopPanel_groupBoxRight.Controls.Add(Settings_button_ClearLog);
             TopPanel_groupBoxRight.Controls.Add(Settings_checkBox_DarkMode);
             TopPanel_groupBoxRight.Controls.Add(Settings_checkBox_Subfolders);
             TopPanel_groupBoxRight.Controls.Add(label4);
@@ -396,30 +397,10 @@
             TopPanel_groupBoxRight.Dock = DockStyle.Fill;
             TopPanel_groupBoxRight.Location = new Point(437, 3);
             TopPanel_groupBoxRight.Name = "TopPanel_groupBoxRight";
-            TopPanel_groupBoxRight.Size = new Size(210, 243);
+            TopPanel_groupBoxRight.Size = new Size(204, 243);
             TopPanel_groupBoxRight.TabIndex = 2;
             TopPanel_groupBoxRight.TabStop = false;
             TopPanel_groupBoxRight.Text = "Settings";
-            // 
-            // Settings_button_About
-            // 
-            Settings_button_About.Location = new Point(87, 133);
-            Settings_button_About.Name = "Settings_button_About";
-            Settings_button_About.Size = new Size(48, 23);
-            Settings_button_About.TabIndex = 8;
-            Settings_button_About.Text = "About";
-            Settings_button_About.UseVisualStyleBackColor = true;
-            Settings_button_About.Click += Settings_button_About_Click;
-            // 
-            // Settings_button_ClearLog
-            // 
-            Settings_button_ClearLog.Location = new Point(135, 133);
-            Settings_button_ClearLog.Name = "Settings_button_ClearLog";
-            Settings_button_ClearLog.Size = new Size(66, 23);
-            Settings_button_ClearLog.TabIndex = 7;
-            Settings_button_ClearLog.Text = "Clear Log";
-            Settings_button_ClearLog.UseVisualStyleBackColor = true;
-            Settings_button_ClearLog.Click += Settings_button_ClearLog_Click;
             // 
             // Settings_checkBox_DarkMode
             // 
@@ -435,14 +416,14 @@
             // 
             Settings_checkBox_Subfolders.Location = new Point(6, 116);
             Settings_checkBox_Subfolders.Name = "Settings_checkBox_Subfolders";
-            Settings_checkBox_Subfolders.Size = new Size(201, 34);
+            Settings_checkBox_Subfolders.Size = new Size(166, 34);
             Settings_checkBox_Subfolders.TabIndex = 5;
             Settings_checkBox_Subfolders.Text = "Chosen files include those within subfolders";
             Settings_checkBox_Subfolders.UseVisualStyleBackColor = true;
             // 
             // label4
             // 
-            label4.Location = new Point(6, 179);
+            label4.Location = new Point(3, 178);
             label4.Name = "label4";
             label4.Size = new Size(201, 32);
             label4.TabIndex = 4;
@@ -486,6 +467,27 @@
             checkBox_InstantLoadDir.Text = "Load root folders on start";
             checkBox_InstantLoadDir.UseVisualStyleBackColor = true;
             // 
+            // Settings_button_About
+            // 
+            Settings_button_About.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            Settings_button_About.Location = new Point(593, -1);
+            Settings_button_About.Name = "Settings_button_About";
+            Settings_button_About.Size = new Size(48, 23);
+            Settings_button_About.TabIndex = 8;
+            Settings_button_About.Text = "About";
+            Settings_button_About.UseVisualStyleBackColor = true;
+            Settings_button_About.Click += Settings_button_About_Click;
+            // 
+            // FileDetails_button_ClearLog
+            // 
+            FileDetails_button_ClearLog.Location = new Point(373, -2);
+            FileDetails_button_ClearLog.Name = "FileDetails_button_ClearLog";
+            FileDetails_button_ClearLog.Size = new Size(66, 23);
+            FileDetails_button_ClearLog.TabIndex = 7;
+            FileDetails_button_ClearLog.Text = "Clear Log";
+            FileDetails_button_ClearLog.UseVisualStyleBackColor = true;
+            FileDetails_button_ClearLog.Click += FileDetails_button_ClearLog_Click;
+            // 
             // splitContainerMiddle
             // 
             splitContainerMiddle.BorderStyle = BorderStyle.Fixed3D;
@@ -502,8 +504,8 @@
             // 
             splitContainerMiddle.Panel2.Controls.Add(Files_listView);
             splitContainerMiddle.Panel2.Controls.Add(Files_toolStrip);
-            splitContainerMiddle.Size = new Size(650, 192);
-            splitContainerMiddle.SplitterDistance = 311;
+            splitContainerMiddle.Size = new Size(644, 192);
+            splitContainerMiddle.SplitterDistance = 308;
             splitContainerMiddle.TabIndex = 3;
             // 
             // Folders_treeView
@@ -514,7 +516,7 @@
             Folders_treeView.Location = new Point(0, 25);
             Folders_treeView.Name = "Folders_treeView";
             Folders_treeView.ShowNodeToolTips = true;
-            Folders_treeView.Size = new Size(307, 163);
+            Folders_treeView.Size = new Size(304, 163);
             Folders_treeView.TabIndex = 0;
             Folders_treeView.DoubleClick += Folders_treeView_DblClick;
             // 
@@ -526,7 +528,7 @@
             Folders_toolStrip.Items.AddRange(new ToolStripItem[] { Folders_toolStripButton_Load, toolStripSeparator1, toolStripLabel1, Folders_toolStripButton_Prev, Folders_toolStripButton_Random, Folders_toolStripButton_Next });
             Folders_toolStrip.Location = new Point(0, 0);
             Folders_toolStrip.Name = "Folders_toolStrip";
-            Folders_toolStrip.Size = new Size(307, 25);
+            Folders_toolStrip.Size = new Size(304, 25);
             Folders_toolStrip.TabIndex = 1;
             Folders_toolStrip.Text = "toolStrip1";
             // 
@@ -588,7 +590,7 @@
             Files_listView.MultiSelect = false;
             Files_listView.Name = "Files_listView";
             Files_listView.ShowItemToolTips = true;
-            Files_listView.Size = new Size(331, 163);
+            Files_listView.Size = new Size(328, 163);
             Files_listView.TabIndex = 3;
             Files_listView.UseCompatibleStateImageBehavior = false;
             Files_listView.View = View.List;
@@ -602,7 +604,7 @@
             Files_toolStrip.Items.AddRange(new ToolStripItem[] { Files_toolStripButton_Load, toolStripSeparator2, toolStripLabel2, Files_toolStripButton_Prev, Files_toolStripButton_Random, Files_toolStripButton_Next });
             Files_toolStrip.Location = new Point(0, 0);
             Files_toolStrip.Name = "Files_toolStrip";
-            Files_toolStrip.Size = new Size(331, 25);
+            Files_toolStrip.Size = new Size(328, 25);
             Files_toolStrip.TabIndex = 2;
             Files_toolStrip.Text = "toolStrip2";
             // 
@@ -671,7 +673,7 @@
             // splitContainerMain.Panel2
             // 
             splitContainerMain.Panel2.Controls.Add(splitContainerLower);
-            splitContainerMain.Size = new Size(650, 578);
+            splitContainerMain.Size = new Size(644, 578);
             splitContainerMain.SplitterDistance = 249;
             splitContainerMain.TabIndex = 4;
             splitContainerMain.TabStop = false;
@@ -690,9 +692,21 @@
             // splitContainerLower.Panel2
             // 
             splitContainerLower.Panel2.Controls.Add(FileDetails_listView);
-            splitContainerLower.Size = new Size(650, 325);
+            splitContainerLower.Panel2.Controls.Add(panel1);
+            splitContainerLower.Size = new Size(644, 325);
             splitContainerLower.SplitterDistance = 192;
             splitContainerLower.TabIndex = 0;
+            // 
+            // panel1
+            // 
+            panel1.Controls.Add(FileDetails_checkBox_ExcludeDup);
+            panel1.Controls.Add(Settings_button_About);
+            panel1.Controls.Add(FileDetails_button_ClearLog);
+            panel1.Dock = DockStyle.Top;
+            panel1.Location = new Point(0, 0);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(644, 24);
+            panel1.TabIndex = 2;
             // 
             // RootFolders_folderBrowserDialog_Edit
             // 
@@ -703,11 +717,23 @@
             // 
             RootFolders_folderBrowserDialog_Add.AutoUpgradeEnabled = false;
             // 
+            // FileDetails_checkBox_ExcludeDup
+            // 
+            FileDetails_checkBox_ExcludeDup.AutoSize = true;
+            FileDetails_checkBox_ExcludeDup.Checked = true;
+            FileDetails_checkBox_ExcludeDup.CheckState = CheckState.Checked;
+            FileDetails_checkBox_ExcludeDup.Location = new Point(6, 2);
+            FileDetails_checkBox_ExcludeDup.Name = "FileDetails_checkBox_ExcludeDup";
+            FileDetails_checkBox_ExcludeDup.Size = new Size(364, 19);
+            FileDetails_checkBox_ExcludeDup.TabIndex = 9;
+            FileDetails_checkBox_ExcludeDup.Text = "Files listed in the Log below are excluded from random selection";
+            FileDetails_checkBox_ExcludeDup.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(650, 600);
+            ClientSize = new Size(644, 600);
             Controls.Add(splitContainerMain);
             Controls.Add(Bottom_StatusStrip);
             MinimumSize = new Size(0, 207);
@@ -744,6 +770,8 @@
             splitContainerLower.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainerLower).EndInit();
             splitContainerLower.ResumeLayout(false);
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -806,7 +834,9 @@
         private FolderBrowserDialog RootFolders_folderBrowserDialog_Edit;
         private FolderBrowserDialog RootFolders_folderBrowserDialog_Add;
         private Button Settings_button_About;
-        private Button Settings_button_ClearLog;
+        private Button FileDetails_button_ClearLog;
         private CheckBox Settings_checkBox_DarkMode;
+        private Panel panel1;
+        private CheckBox FileDetails_checkBox_ExcludeDup;
     }
 }

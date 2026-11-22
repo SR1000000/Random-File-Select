@@ -312,9 +312,9 @@ namespace Random_File_Select
 
         }
 
-        private void Settings_button_ClearLog_Click(object sender, EventArgs e)
+        private void FileDetails_button_ClearLog_Click(object sender, EventArgs e)
         {
-
+            filesViewController.ClearLog();
         }
     }
 }
