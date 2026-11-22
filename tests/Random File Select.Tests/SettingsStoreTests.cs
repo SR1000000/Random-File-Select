@@ -110,6 +110,7 @@ public class SettingsStoreTests : IDisposable
                 InstantlyOpenChosenFiles = true,
                 IncludeSubfolders = true,
                 DarkMode = true,
+                ExcludeDup = false,
                 LastAccessWeight = 7
             },
             Filters = new FilterSettings
@@ -135,6 +136,7 @@ public class SettingsStoreTests : IDisposable
         Assert.False(loaded.RootFolders[1].IsChecked);
         Assert.True(loaded.Behavior.LoadRootFoldersOnStart);
         Assert.True(loaded.Behavior.DarkMode);
+        Assert.False(loaded.Behavior.ExcludeDup);
         Assert.Equal(7, loaded.Behavior.LastAccessWeight);
         Assert.Equal("inc", loaded.Filters.Include);
         Assert.Equal(1, loaded.Filters.SelectedExtensionGroupIndex);
@@ -150,6 +152,14 @@ public class SettingsStoreTests : IDisposable
         store.Save(new AppSettings { Filters = new FilterSettings { ExtensionFilterText = text } });
 
         Assert.Equal(text, store.Load().Filters.ExtensionFilterText);
+    }
+
+    [Fact]
+    public void Load_olderJsonWithoutExcludeDup_defaultsChecked()
+    {
+        File.WriteAllText(_settingsPath, """{ "Behavior": { "DarkMode": false } }""");
+
+        Assert.True(new SettingsStore(_settingsPath).Load().Behavior.ExcludeDup);
     }
 
     [Fact]

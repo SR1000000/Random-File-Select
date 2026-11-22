@@ -30,6 +30,7 @@ namespace Random_File_Select
                 FileDetails_listView,
                 Settings_trackBar_LastAccessWeight,
                 checkBox_InstantOpen,
+                FileDetails_checkBox_ExcludeDup,
                 BottomStatusStrip_StatusLabel,
                 this);
 
@@ -100,6 +101,7 @@ namespace Random_File_Select
             checkBox_InstantOpen.Checked = behavior.InstantlyOpenChosenFiles;
             Settings_checkBox_Subfolders.Checked = behavior.IncludeSubfolders;
             Settings_checkBox_DarkMode.Checked = behavior.DarkMode;
+            FileDetails_checkBox_ExcludeDup.Checked = behavior.ExcludeDup;
             Settings_trackBar_LastAccessWeight.Value = Math.Clamp(
                 behavior.LastAccessWeight,
                 Settings_trackBar_LastAccessWeight.Minimum,
@@ -160,6 +162,7 @@ namespace Random_File_Select
             _settings.Behavior.InstantlyOpenChosenFiles = checkBox_InstantOpen.Checked;
             _settings.Behavior.IncludeSubfolders = Settings_checkBox_Subfolders.Checked;
             _settings.Behavior.DarkMode = Settings_checkBox_DarkMode.Checked;
+            _settings.Behavior.ExcludeDup = FileDetails_checkBox_ExcludeDup.Checked;
             _settings.Behavior.LastAccessWeight = Settings_trackBar_LastAccessWeight.Value;
 
             _settings.Filters = CaptureFilterSettings();

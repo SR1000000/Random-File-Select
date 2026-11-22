@@ -8,6 +8,8 @@ System files and folders are ignored (Mostly because Recycle Bin and other syste
 
 This program is built to be portable only.  If you place it in a folder which requires admin privileges to write to (Program Files, etc.), settings will not be saved.
 
+The Log box (FileDetails_listView) has a limit of 1000 entries.  After the limit is reached, new entries push out the oldest entries.
+
 Last Accessed Time as a Windows property is very fragile: opening File Properties pings it, mousing over a video or zip file too long pings it, it can be turned off and is off by default in some Windows editions, updating timestamps can be delayed up to 1 hour.  Despite all this, it is natively supported in Windows and mostly works, so I use it here.
 
 Layout inspired by Random File Picker by Marcin Szeniak.

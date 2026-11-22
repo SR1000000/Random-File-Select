@@ -40,6 +40,7 @@ public sealed class BehaviorSettings
     public bool InstantlyOpenChosenFiles { get; set; }
     public bool IncludeSubfolders { get; set; }
     public bool DarkMode { get; set; }
+    public bool ExcludeDup { get; set; } = true;
     public int LastAccessWeight { get; set; } = 5;
 }
 
