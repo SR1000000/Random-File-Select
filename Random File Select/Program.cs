@@ -11,11 +11,19 @@ namespace Random_File_Select
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            
-            // Force dark mode across the entire app
-            Application.SetColorMode(SystemColorMode.Dark);
-            
-            Application.Run(new Form1());
+
+            string path = SettingsStore.DefaultFilePath;
+            bool hasSavedSettings = File.Exists(path);
+            AppSettings settings = new SettingsStore(path).Load();
+
+            if (!hasSavedSettings)
+                Application.SetColorMode(SystemColorMode.System);
+            else if (settings.Behavior.DarkMode)
+                Application.SetColorMode(SystemColorMode.Dark);
+            else
+                Application.SetColorMode(SystemColorMode.Classic);
+
+            Application.Run(new Form1(settings));
         }
     }
 }

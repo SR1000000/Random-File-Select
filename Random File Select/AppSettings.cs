@@ -39,6 +39,7 @@ public sealed class BehaviorSettings
     public bool ChooseRandomFileAfterDir { get; set; }
     public bool InstantlyOpenChosenFiles { get; set; }
     public bool IncludeSubfolders { get; set; }
+    public bool DarkMode { get; set; }
     public int LastAccessWeight { get; set; } = 5;
 }
 

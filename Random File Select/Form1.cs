@@ -9,9 +9,14 @@ namespace Random_File_Select
         private readonly FilesViewController filesViewController;
         private readonly FoldersTreeController foldersTreeController;
 
-        public Form1()
+        public Form1() : this(new AppSettings())
+        {
+        }
+
+        public Form1(AppSettings settings)
         {
             InitializeComponent();
+            _settings = settings;
 
             filtersController = new FiltersController(Filters_comboBox_Extensions);
             rootFoldersController = new RootFoldersController(
@@ -66,7 +71,6 @@ namespace Random_File_Select
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            _settings = _settingsStore.Load();
             ApplySettings(_settings);
 
             WindowPlacementSettings? placement = _settings.Layout.WindowPlacement;
@@ -95,6 +99,7 @@ namespace Random_File_Select
             checkBox_InstantFile.Checked = behavior.ChooseRandomFileAfterDir;
             checkBox_InstantOpen.Checked = behavior.InstantlyOpenChosenFiles;
             Settings_checkBox_Subfolders.Checked = behavior.IncludeSubfolders;
+            Settings_checkBox_DarkMode.Checked = behavior.DarkMode;
             Settings_trackBar_LastAccessWeight.Value = Math.Clamp(
                 behavior.LastAccessWeight,
                 Settings_trackBar_LastAccessWeight.Minimum,
@@ -154,6 +159,7 @@ namespace Random_File_Select
             _settings.Behavior.ChooseRandomFileAfterDir = checkBox_InstantFile.Checked;
             _settings.Behavior.InstantlyOpenChosenFiles = checkBox_InstantOpen.Checked;
             _settings.Behavior.IncludeSubfolders = Settings_checkBox_Subfolders.Checked;
+            _settings.Behavior.DarkMode = Settings_checkBox_DarkMode.Checked;
             _settings.Behavior.LastAccessWeight = Settings_trackBar_LastAccessWeight.Value;
 
             _settings.Filters = CaptureFilterSettings();
@@ -302,11 +308,6 @@ namespace Random_File_Select
         }
 
         private void Settings_button_About_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Settings_checkBox_NightMode_CheckChanged(object sender, EventArgs e)
         {
 
         }

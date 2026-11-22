@@ -109,6 +109,7 @@ public class SettingsStoreTests : IDisposable
                 ChooseRandomFileAfterDir = false,
                 InstantlyOpenChosenFiles = true,
                 IncludeSubfolders = true,
+                DarkMode = true,
                 LastAccessWeight = 7
             },
             Filters = new FilterSettings
@@ -133,6 +134,7 @@ public class SettingsStoreTests : IDisposable
         Assert.True(loaded.RootFolders[0].IsChecked);
         Assert.False(loaded.RootFolders[1].IsChecked);
         Assert.True(loaded.Behavior.LoadRootFoldersOnStart);
+        Assert.True(loaded.Behavior.DarkMode);
         Assert.Equal(7, loaded.Behavior.LastAccessWeight);
         Assert.Equal("inc", loaded.Filters.Include);
         Assert.Equal(1, loaded.Filters.SelectedExtensionGroupIndex);
