@@ -167,24 +167,18 @@ public sealed class FilesViewController
             ToolTipText = fullPath
         };
 
-        _logListView.BeginUpdate();
-        try
+        _logListView.Items.Add(logItem);
+        _loggedPathCounts[fullPath] = _loggedPathCounts.GetValueOrDefault(fullPath) + 1;
+        if (_logListView.Items.Count > MaxLogEntries)
         {
-            _logListView.Items.Add(logItem);
-            _loggedPathCounts[fullPath] = _loggedPathCounts.GetValueOrDefault(fullPath) + 1;
-            if (_logListView.Items.Count > MaxLogEntries)
-            {
-                string evictedPath = ((FileRow)_logListView.Items[0].Tag!).FullPath;
-                _logListView.Items.RemoveAt(0);
-                if (--_loggedPathCounts[evictedPath] == 0)
-                    _loggedPathCounts.Remove(evictedPath);
-            }
+            string evictedPath = ((FileRow)_logListView.Items[0].Tag!).FullPath;
+            _logListView.Items.RemoveAt(0);
+            if (--_loggedPathCounts[evictedPath] == 0)
+                _loggedPathCounts.Remove(evictedPath);
         }
-        finally
-        {
-            _logListView.EndUpdate();
-        }
+
         logItem.EnsureVisible();
+        _logListView.Update();
     }
 
     /// <summary>Removes all rows from the selection log, resets the logged-path counts, and sets the status strip to "Log cleared."</summary>
