@@ -116,17 +116,17 @@
             // Bottom_StatusStrip
             // 
             Bottom_StatusStrip.Items.AddRange(new ToolStripItem[] { BottomStatusStrip_StatusLabel });
-            Bottom_StatusStrip.Location = new Point(0, 578);
+            Bottom_StatusStrip.Location = new Point(0, 577);
             Bottom_StatusStrip.Name = "Bottom_StatusStrip";
             Bottom_StatusStrip.ShowItemToolTips = true;
-            Bottom_StatusStrip.Size = new Size(644, 22);
+            Bottom_StatusStrip.Size = new Size(646, 22);
             Bottom_StatusStrip.TabIndex = 0;
             Bottom_StatusStrip.Text = "statusStrip1";
             // 
             // BottomStatusStrip_StatusLabel
             // 
             BottomStatusStrip_StatusLabel.Name = "BottomStatusStrip_StatusLabel";
-            BottomStatusStrip_StatusLabel.Size = new Size(629, 17);
+            BottomStatusStrip_StatusLabel.Size = new Size(631, 17);
             BottomStatusStrip_StatusLabel.Spring = true;
             BottomStatusStrip_StatusLabel.Text = "Placeholder";
             BottomStatusStrip_StatusLabel.TextAlign = ContentAlignment.MiddleLeft;
@@ -140,7 +140,7 @@
             FileDetails_listView.Location = new Point(0, 24);
             FileDetails_listView.MultiSelect = false;
             FileDetails_listView.Name = "FileDetails_listView";
-            FileDetails_listView.Size = new Size(644, 105);
+            FileDetails_listView.Size = new Size(646, 105);
             FileDetails_listView.TabIndex = 1;
             FileDetails_listView.UseCompatibleStateImageBehavior = false;
             FileDetails_listView.View = View.Details;
@@ -164,19 +164,19 @@
             // TableLayoutPanel_Top
             // 
             TableLayoutPanel_Top.ColumnCount = 3;
-            TableLayoutPanel_Top.ColumnStyles.Add(new ColumnStyle());
+            TableLayoutPanel_Top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             TableLayoutPanel_Top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 228F));
-            TableLayoutPanel_Top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 152F));
+            TableLayoutPanel_Top.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 212F));
             TableLayoutPanel_Top.Controls.Add(TopPanel_groupBoxLeft, 0, 0);
             TableLayoutPanel_Top.Controls.Add(TopPanel_groupBoxCenter, 1, 0);
             TableLayoutPanel_Top.Controls.Add(TopPanel_groupBoxRight, 2, 0);
             TableLayoutPanel_Top.Dock = DockStyle.Fill;
             TableLayoutPanel_Top.Location = new Point(0, 0);
-            TableLayoutPanel_Top.MinimumSize = new Size(0, 240);
+            TableLayoutPanel_Top.MinimumSize = new Size(0, 255);
             TableLayoutPanel_Top.Name = "TableLayoutPanel_Top";
             TableLayoutPanel_Top.RowCount = 1;
             TableLayoutPanel_Top.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            TableLayoutPanel_Top.Size = new Size(644, 249);
+            TableLayoutPanel_Top.Size = new Size(646, 255);
             TableLayoutPanel_Top.TabIndex = 2;
             // 
             // TopPanel_groupBoxLeft
@@ -186,7 +186,7 @@
             TopPanel_groupBoxLeft.Dock = DockStyle.Fill;
             TopPanel_groupBoxLeft.Location = new Point(3, 3);
             TopPanel_groupBoxLeft.Name = "TopPanel_groupBoxLeft";
-            TopPanel_groupBoxLeft.Size = new Size(200, 243);
+            TopPanel_groupBoxLeft.Size = new Size(200, 249);
             TopPanel_groupBoxLeft.TabIndex = 0;
             TopPanel_groupBoxLeft.TabStop = false;
             TopPanel_groupBoxLeft.Text = "Root folders";
@@ -200,7 +200,7 @@
             RootFolders_checkedListBox.IntegralHeight = false;
             RootFolders_checkedListBox.Location = new Point(3, 51);
             RootFolders_checkedListBox.Name = "RootFolders_checkedListBox";
-            RootFolders_checkedListBox.Size = new Size(194, 189);
+            RootFolders_checkedListBox.Size = new Size(194, 195);
             RootFolders_checkedListBox.TabIndex = 3;
             // 
             // panel2
@@ -262,7 +262,7 @@
             TopPanel_groupBoxCenter.Dock = DockStyle.Fill;
             TopPanel_groupBoxCenter.Location = new Point(209, 3);
             TopPanel_groupBoxCenter.Name = "TopPanel_groupBoxCenter";
-            TopPanel_groupBoxCenter.Size = new Size(222, 243);
+            TopPanel_groupBoxCenter.Size = new Size(222, 249);
             TopPanel_groupBoxCenter.TabIndex = 1;
             TopPanel_groupBoxCenter.TabStop = false;
             TopPanel_groupBoxCenter.Text = "Filters";
@@ -329,7 +329,7 @@
             // label6
             // 
             label6.Dock = DockStyle.Bottom;
-            label6.Location = new Point(3, 190);
+            label6.Location = new Point(3, 196);
             label6.Name = "label6";
             label6.Size = new Size(216, 50);
             label6.TabIndex = 6;
@@ -397,7 +397,7 @@
             TopPanel_groupBoxRight.Dock = DockStyle.Fill;
             TopPanel_groupBoxRight.Location = new Point(437, 3);
             TopPanel_groupBoxRight.Name = "TopPanel_groupBoxRight";
-            TopPanel_groupBoxRight.Size = new Size(204, 243);
+            TopPanel_groupBoxRight.Size = new Size(206, 249);
             TopPanel_groupBoxRight.TabIndex = 2;
             TopPanel_groupBoxRight.TabStop = false;
             TopPanel_groupBoxRight.Text = "Settings";
@@ -432,7 +432,7 @@
             // Settings_trackBar_LastAccessWeight
             // 
             Settings_trackBar_LastAccessWeight.LargeChange = 2;
-            Settings_trackBar_LastAccessWeight.Location = new Point(6, 214);
+            Settings_trackBar_LastAccessWeight.Location = new Point(2, 213);
             Settings_trackBar_LastAccessWeight.Name = "Settings_trackBar_LastAccessWeight";
             Settings_trackBar_LastAccessWeight.Size = new Size(195, 45);
             Settings_trackBar_LastAccessWeight.TabIndex = 3;
@@ -470,7 +470,7 @@
             // Settings_button_About
             // 
             Settings_button_About.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            Settings_button_About.Location = new Point(593, -1);
+            Settings_button_About.Location = new Point(595, -1);
             Settings_button_About.Name = "Settings_button_About";
             Settings_button_About.Size = new Size(48, 23);
             Settings_button_About.TabIndex = 8;
@@ -504,7 +504,7 @@
             // 
             splitContainerMiddle.Panel2.Controls.Add(Files_listView);
             splitContainerMiddle.Panel2.Controls.Add(Files_toolStrip);
-            splitContainerMiddle.Size = new Size(644, 192);
+            splitContainerMiddle.Size = new Size(646, 185);
             splitContainerMiddle.SplitterDistance = 308;
             splitContainerMiddle.TabIndex = 3;
             // 
@@ -516,7 +516,7 @@
             Folders_treeView.Location = new Point(0, 25);
             Folders_treeView.Name = "Folders_treeView";
             Folders_treeView.ShowNodeToolTips = true;
-            Folders_treeView.Size = new Size(304, 163);
+            Folders_treeView.Size = new Size(304, 156);
             Folders_treeView.TabIndex = 0;
             Folders_treeView.DoubleClick += Folders_treeView_DblClick;
             // 
@@ -590,7 +590,7 @@
             Files_listView.MultiSelect = false;
             Files_listView.Name = "Files_listView";
             Files_listView.ShowItemToolTips = true;
-            Files_listView.Size = new Size(328, 163);
+            Files_listView.Size = new Size(330, 156);
             Files_listView.TabIndex = 3;
             Files_listView.UseCompatibleStateImageBehavior = false;
             Files_listView.View = View.List;
@@ -605,7 +605,7 @@
             Files_toolStrip.Items.AddRange(new ToolStripItem[] { Files_toolStripButton_Load, toolStripSeparator2, toolStripLabel2, Files_toolStripButton_Prev, Files_toolStripButton_Random, Files_toolStripButton_Next });
             Files_toolStrip.Location = new Point(0, 0);
             Files_toolStrip.Name = "Files_toolStrip";
-            Files_toolStrip.Size = new Size(328, 25);
+            Files_toolStrip.Size = new Size(330, 25);
             Files_toolStrip.TabIndex = 2;
             Files_toolStrip.Text = "toolStrip2";
             // 
@@ -663,6 +663,7 @@
             // splitContainerMain
             // 
             splitContainerMain.Dock = DockStyle.Fill;
+            splitContainerMain.FixedPanel = FixedPanel.Panel1;
             splitContainerMain.Location = new Point(0, 0);
             splitContainerMain.Name = "splitContainerMain";
             splitContainerMain.Orientation = Orientation.Horizontal;
@@ -670,12 +671,13 @@
             // splitContainerMain.Panel1
             // 
             splitContainerMain.Panel1.Controls.Add(TableLayoutPanel_Top);
+            splitContainerMain.Panel1MinSize = 255;
             // 
             // splitContainerMain.Panel2
             // 
             splitContainerMain.Panel2.Controls.Add(splitContainerLower);
-            splitContainerMain.Size = new Size(644, 578);
-            splitContainerMain.SplitterDistance = 249;
+            splitContainerMain.Size = new Size(646, 577);
+            splitContainerMain.SplitterDistance = 255;
             splitContainerMain.TabIndex = 4;
             splitContainerMain.TabStop = false;
             // 
@@ -694,8 +696,8 @@
             // 
             splitContainerLower.Panel2.Controls.Add(FileDetails_listView);
             splitContainerLower.Panel2.Controls.Add(panel1);
-            splitContainerLower.Size = new Size(644, 325);
-            splitContainerLower.SplitterDistance = 192;
+            splitContainerLower.Size = new Size(646, 318);
+            splitContainerLower.SplitterDistance = 185;
             splitContainerLower.TabIndex = 0;
             // 
             // panel1
@@ -706,7 +708,7 @@
             panel1.Dock = DockStyle.Top;
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(644, 24);
+            panel1.Size = new Size(646, 24);
             panel1.TabIndex = 2;
             // 
             // FileDetails_checkBox_ExcludeDup
@@ -734,10 +736,10 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(644, 600);
+            ClientSize = new Size(646, 599);
             Controls.Add(splitContainerMain);
             Controls.Add(Bottom_StatusStrip);
-            MinimumSize = new Size(0, 207);
+            MinimumSize = new Size(662, 400);
             Name = "Form1";
             Text = "Random File Selection v0.1";
             FormClosing += Form1_FormClosing;
