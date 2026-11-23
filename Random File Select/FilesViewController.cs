@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Globalization;
 
 namespace Random_File_Select;
 
@@ -8,7 +7,7 @@ namespace Random_File_Select;
 public sealed class FilesViewController
 {
     /// <summary>Maximum rows kept in the selection log; the oldest row is dropped once exceeded.</summary>
-    private const int MaxLogEntries = 1000;
+    internal const int MaxLogEntries = 1000;
 
     private readonly ListView _listView;
     private readonly ListView _logListView;
@@ -160,7 +159,7 @@ public sealed class FilesViewController
         {
             row.FolderPath,
             row.File.FileName,
-            row.File.LastAccessTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+            row.File.LastAccessTime.ToString("g")
         })
         {
             Tag = row,
@@ -205,7 +204,7 @@ public sealed class FilesViewController
             return;
 
         ListViewItem item = _logListView.SelectedItems[0];
-        _statusLabel.Text = string.Create(CultureInfo.InvariantCulture, $"Selected \"{item.SubItems[1].Text}\" from log.");
+        _statusLabel.Text = $"Selected \"{item.SubItems[1].Text}\" from log.";
 
         if (OpenFile((FileRow)item.Tag!))
             _statusLabel.Text += "  File opened.";
@@ -214,9 +213,7 @@ public sealed class FilesViewController
     /// <summary>Sets the status strip to random or manual selection for the given row.</summary>
     private void SetFileStatus(FileRow row, bool randomChoice)
     {
-        _statusLabel.Text = randomChoice
-            ? string.Create(CultureInfo.InvariantCulture, $"Randomly chose \"{row.File.FileName}\".")
-            : string.Create(CultureInfo.InvariantCulture, $"Selected \"{row.File.FileName}\".");
+        _statusLabel.Text = $"{(randomChoice ? "Randomly chose" : "Selected")} \"{row.File.FileName}\".";
     }
 
     /// <summary>Opens the first selected row when present; sets manual-selection status and appends "File opened." when launch succeeds.</summary>

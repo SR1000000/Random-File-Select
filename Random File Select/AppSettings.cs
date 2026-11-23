@@ -4,7 +4,7 @@ namespace Random_File_Select;
 public sealed class AppSettings
 {
     public WindowLayoutSettings Layout { get; set; } = new();
-    public List<RootFolderEntry> RootFolders { get; set; } = new();
+    public List<RootFolderEntry> RootFolders { get; set; } = [];
     public BehaviorSettings Behavior { get; set; } = new();
     public FilterSettings Filters { get; set; } = new();
 }
@@ -49,7 +49,7 @@ public sealed class FilterSettings
 {
     public string Include { get; set; } = string.Empty;
     public string Exclude { get; set; } = string.Empty;
-    public List<string> ExtensionGroups { get; set; } = new();
+    public List<string> ExtensionGroups { get; set; } = [];
     public int SelectedExtensionGroupIndex { get; set; }
 
     /// <summary>Live text of the extension ComboBox (may be custom or empty); null in older settings files.</summary>

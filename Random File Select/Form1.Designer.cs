@@ -518,7 +518,6 @@
             Folders_treeView.ShowNodeToolTips = true;
             Folders_treeView.Size = new Size(304, 156);
             Folders_treeView.TabIndex = 0;
-            Folders_treeView.DoubleClick += Folders_treeView_DblClick;
             // 
             // Folders_toolStrip
             // 
@@ -726,7 +725,6 @@
             // RootFolders_folderBrowserDialog_Edit
             // 
             RootFolders_folderBrowserDialog_Edit.AutoUpgradeEnabled = false;
-            RootFolders_folderBrowserDialog_Edit.HelpRequest += RootFolders_folderBrowserDialog_Edit_HelpRequest;
             // 
             // RootFolders_folderBrowserDialog_Add
             // 
@@ -741,7 +739,7 @@
             Controls.Add(Bottom_StatusStrip);
             MinimumSize = new Size(662, 400);
             Name = "Form1";
-            Text = "Random File Selection v0.1";
+            Text = "Random File Selection v1.0.1";
             FormClosing += Form1_FormClosing;
             Load += Form1_Load;
             Shown += Form1_Shown;

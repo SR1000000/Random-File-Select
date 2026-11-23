@@ -1,19 +1,24 @@
 using System.Collections.Immutable;
+using System.Globalization;
 
 namespace Random_File_Select.Tests;
 
 public class FoldersTreeTests : IDisposable
 {
     private readonly string _temp;
+    private readonly CultureInfo _originalCulture = CultureInfo.CurrentCulture;
 
     public FoldersTreeTests()
     {
+        // Formatter output follows the current culture; pin it so the expected strings are locale-independent.
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
         _temp = Path.Combine(Path.GetTempPath(), "RandomFileSelectTree_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_temp);
     }
 
     public void Dispose()
     {
+        CultureInfo.CurrentCulture = _originalCulture;
         if (Directory.Exists(_temp))
         {
             foreach (string path in Directory.EnumerateFileSystemEntries(_temp, "*", SearchOption.AllDirectories))

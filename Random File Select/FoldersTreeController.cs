@@ -27,8 +27,25 @@ public sealed class FoldersTreeController
         _subFoldersCheckBox = subFoldersCheckBox;
 
         _tree.MouseDown += OnTreeMouseDown;
+        _tree.NodeMouseDoubleClick += OnTreeNodeMouseDoubleClick;
         _tree.BeforeExpand += OnTreeBeforeExpandOrCollapse;
         _tree.BeforeCollapse += OnTreeBeforeExpandOrCollapse;
+    }
+
+    /// <summary>Raised after a left double-click on a folder node's label populated the files ListView.</summary>
+    public event EventHandler? FolderActivated;
+
+    /// <summary>Activates the double-clicked folder node (left button, on its label) and raises <see cref="FolderActivated"/> when files were shown.</summary>
+    private void OnTreeNodeMouseDoubleClick(object? sender, TreeNodeMouseClickEventArgs e)
+    {
+        if (e.Button != MouseButtons.Left || e.Node is null)
+            return;
+
+        if (_tree.HitTest(e.Location).Location is TreeViewHitTestLocations.Label or TreeViewHitTestLocations.RightOfLabel
+            && OnFolderActivated(e.Node))
+        {
+            FolderActivated?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>Flags non-PlusMinus left double-clicks to cancel the upcoming expand/collapse and schedules the flag reset on the next message-loop turn.</summary>

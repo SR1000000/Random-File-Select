@@ -1,10 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Security;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Random_File_Select;
 
@@ -17,7 +14,6 @@ public sealed record RetainedFile(string FileName, DateTime LastWriteTime, DateT
 /// <summary>A file shown in the files ListView: its containing folder's full path plus the RetainedFile instance shared with that FolderNode.</summary>
 public readonly record struct FileRow(string FolderPath, RetainedFile File)
 {
-    /// <summary>Full path of the file, computed on demand.</summary>
     public string FullPath => Path.Combine(FolderPath, File.FileName);
 }
 
@@ -121,7 +117,6 @@ public static class FolderTreeBuilder
                 rootNodes.Add(node);
         }
 
-        stopwatch.Stop();
         return new FolderScanResult(
             rootNodes,
             scanner.MatchingFolderCount,
@@ -139,7 +134,7 @@ public static class FolderTreeBuilder
     }
 
     private static bool IsSkippable(Exception ex) =>
-        ex is UnauthorizedAccessException or IOException or SecurityException or PathTooLongException
+        ex is UnauthorizedAccessException or IOException or SecurityException
             or ArgumentException or NotSupportedException;
 
     /// <summary>True for a symbolic link or junction (reparse point with a link target); other reparse points are traversed.</summary>
@@ -229,7 +224,7 @@ public static class FolderTreeBuilder
                     if (entry is DirectoryInfo sub)
                         subdirectories.Add(sub);
                     else if (entry is FileInfo file && TryRetain(file, out RetainedFile? retained))
-                        files.Add(retained!);
+                        files.Add(retained);
                 }
             }
             catch (DirectoryNotFoundException)
@@ -289,7 +284,7 @@ public static class FolderTreeBuilder
         }
 
         /// <summary>Applies the filter and captures listing metadata; files whose metadata cannot be read are ignored.</summary>
-        private bool TryRetain(FileInfo file, out RetainedFile? retained)
+        private bool TryRetain(FileInfo file, [NotNullWhen(true)] out RetainedFile? retained)
         {
             retained = null;
             try
@@ -333,7 +328,7 @@ public static class FolderTreeStatusFormatter
     {
         double seconds = elapsed.TotalSeconds;
         if (Math.Round(seconds, 1) < 60)
-            return string.Create(CultureInfo.InvariantCulture, $"{seconds:0.0} s");
+            return $"{seconds:0.0} s";
 
         int whole = (int)Math.Round(seconds);
         return $"{whole / 60} min {whole % 60} s";
@@ -343,64 +338,42 @@ public static class FolderTreeStatusFormatter
     public static string FormatCompleted(FolderScanResult result)
     {
         string elapsed = FormatElapsed(result.Elapsed);
-        string skipped = result.Skipped.Total.ToString("N0", CultureInfo.InvariantCulture);
+        string skipped = result.Skipped.Total.ToString("N0");
 
         if (result.MatchingFolderCount == 0)
         {
-            string rootWord = result.RootsScanned == 1 ? "root" : "roots";
-            return $"No folders contain matching files ({result.RootsScanned:N0} {rootWord} scanned, {skipped} skipped) in {elapsed}";
+            return $"No folders contain matching files ({result.RootsScanned:N0} {Plural(result.RootsScanned, "root")} scanned, {skipped} skipped) in {elapsed}";
         }
 
-        string folderWord = result.MatchingFolderCount == 1 ? "folder" : "folders";
-        string detail = $"{skipped} skipped";
-
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"Loaded {result.MatchingFolderCount:N0} {folderWord} with matching files ({detail}) in {elapsed}");
+        return $"Loaded {result.MatchingFolderCount:N0} {Plural(result.MatchingFolderCount, "folder")} with matching files ({skipped} skipped) in {elapsed}";
     }
 
     public static string FormatCancelled(TimeSpan elapsed) => $"Load cancelled after {FormatElapsed(elapsed)}";
 
     public static string FormatFaulted(Exception error) =>
-        $"Load failed: {Regex.Replace(error.Message, @"\s+", " ").Trim()}";
+        $"Load failed: {string.Join(' ', error.Message.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))}";
 
     /// <summary>Builds the multi-line tooltip breakdown for a completed scan.</summary>
-    public static string FormatTooltip(FolderScanResult result)
-    {
-        var text = new StringBuilder();
-        text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Folders processed: {result.ProcessedCount:N0}"));
-        text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Skipped: {result.Skipped.Total:N0}"));
-        text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"  Inaccessible: {result.Skipped.Inaccessible:N0}"));
-        text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"  Link or junction: {result.Skipped.Link:N0}"));
-        text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"  Missing: {result.Skipped.Missing:N0}"));
-        text.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Roots scanned: {result.RootsScanned:N0}"));
-        text.Append($"Elapsed: {FormatElapsed(result.Elapsed)}");
-        return text.ToString();
-    }
+    public static string FormatTooltip(FolderScanResult result) => string.Join(Environment.NewLine,
+        $"Folders processed: {result.ProcessedCount:N0}",
+        $"Skipped: {result.Skipped.Total:N0}",
+        $"  Inaccessible: {result.Skipped.Inaccessible:N0}",
+        $"  Link or junction: {result.Skipped.Link:N0}",
+        $"  Missing: {result.Skipped.Missing:N0}",
+        $"Roots scanned: {result.RootsScanned:N0}",
+        $"Elapsed: {FormatElapsed(result.Elapsed)}");
 
     public static string FormatNodeTooltip(FolderNode folder)
     {
         int own = folder.OwnFileCount;
         int sub = folder.SubtreeFileCount - own;
-        string fileWord = own == 1 ? "file" : "files";
-
-        if (sub > 0)
-        {
-            return string.Create(
-                CultureInfo.InvariantCulture,
-                $"{own:N0} {fileWord} ({sub:N0} in subfolders)");
-        }
-
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"{own:N0} {fileWord}");
+        string suffix = sub > 0 ? $" ({sub:N0} in subfolders)" : string.Empty;
+        return $"{own:N0} {Plural(own, "file")}{suffix}";
     }
 
-    public static string FormatFolderActivated(int fileCount, string folderName)
-    {
-        string fileWord = fileCount == 1 ? "file" : "files";
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"{fileCount:N0} {fileWord} displayed from '{folderName}'");
-    }
+    public static string FormatFolderActivated(int fileCount, string folderName) =>
+        $"{fileCount:N0} {Plural(fileCount, "file")} displayed from '{folderName}'";
+
+    /// <summary>Appends "s" to the word unless the count is exactly one.</summary>
+    private static string Plural(int count, string word) => count == 1 ? word : word + "s";
 }

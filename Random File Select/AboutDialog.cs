@@ -22,10 +22,7 @@ public sealed class AboutDialog : Form
         StartPosition = FormStartPosition.CenterParent;
         ClientSize = new Size(420, 300);
 
-        var version = Application.ProductVersion;
-        var plusIndex = version.IndexOf('+');
-        if (plusIndex >= 0)
-            version = version[..plusIndex];
+        var version = Application.ProductVersion.Split('+')[0];
 
         var nameLabel = new Label
         {
@@ -59,7 +56,15 @@ public sealed class AboutDialog : Form
         githubLink.Location = new Point(12, descriptionLabel.Bottom + 8);
         githubLink.LinkClicked += (_, _) =>
         {
-            Process.Start(new ProcessStartInfo(GitHubUrl) { UseShellExecute = true });
+            try
+            {
+                Process.Start(new ProcessStartInfo(GitHubUrl) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Unable to open \"{GitHubUrl}\": {ex.Message}", "Error Opening Link",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         };
 
         var licenseLabel = new Label
@@ -69,10 +74,8 @@ public sealed class AboutDialog : Form
         };
         licenseLabel.Location = new Point(12, githubLink.Bottom + 12);
 
-        const string notesText =
-            "Root folders and the extensions list are saved in .settings file alongside the other settings next to the executable.\r\n"
-            + "Junctions/reparse points and system files or folders are skipped during the scan.\r\n"
-            + "The log keeps the most recent 1000 entries.";
+        string notesText =
+            "Root folders and the extensions list are saved in .settings file alongside the other settings next to the executable.";
 
         var notesBox = new TextBox
         {

@@ -14,16 +14,14 @@ namespace Random_File_Select
 
             string path = SettingsStore.DefaultFilePath;
             bool hasSavedSettings = File.Exists(path);
-            AppSettings settings = new SettingsStore(path).Load();
+            var store = new SettingsStore(path);
+            AppSettings settings = store.Load();
 
-            if (!hasSavedSettings)
-                Application.SetColorMode(SystemColorMode.System);
-            else if (settings.Behavior.DarkMode)
-                Application.SetColorMode(SystemColorMode.Dark);
-            else
-                Application.SetColorMode(SystemColorMode.Classic);
+            Application.SetColorMode(!hasSavedSettings ? SystemColorMode.System
+                : settings.Behavior.DarkMode ? SystemColorMode.Dark
+                : SystemColorMode.Classic);
 
-            Application.Run(new Form1(settings));
+            Application.Run(new Form1(settings, store));
         }
     }
 }

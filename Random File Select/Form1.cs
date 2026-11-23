@@ -2,21 +2,23 @@ namespace Random_File_Select
 {
     public partial class Form1 : Form
     {
-        private readonly SettingsStore _settingsStore = new(SettingsStore.DefaultFilePath);
-        private AppSettings _settings = new();
+        private readonly ISettingsStore _settingsStore;
+        private readonly AppSettings _settings;
         private readonly FiltersController filtersController;
         private readonly RootFoldersController rootFoldersController;
         private readonly FilesViewController filesViewController;
         private readonly FoldersTreeController foldersTreeController;
 
-        public Form1() : this(new AppSettings())
+        /// <summary>Parameterless constructor kept for the WinForms Designer.</summary>
+        public Form1() : this(new AppSettings(), new SettingsStore(SettingsStore.DefaultFilePath))
         {
         }
 
-        public Form1(AppSettings settings)
+        public Form1(AppSettings settings, ISettingsStore settingsStore)
         {
             InitializeComponent();
             _settings = settings;
+            _settingsStore = settingsStore;
 
             filtersController = new FiltersController(Filters_comboBox_Extensions);
             rootFoldersController = new RootFoldersController(
@@ -41,6 +43,8 @@ namespace Random_File_Select
                 filesViewController,
                 Settings_checkBox_Subfolders);
 
+            foldersTreeController.FolderActivated += (_, _) => AutoPickFileIfEnabled(true);
+
             rootFoldersController.SelectionChanged += (_, _) => UpdateRootFolderButtons();
             UpdateRootFolderButtons();
 
@@ -62,17 +66,14 @@ namespace Random_File_Select
             {
                 _settingsStore.Save(_settings);
             }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
             }
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            ApplySettings(_settings);
+            ApplySettings();
 
             WindowPlacementSettings? placement = _settings.Layout.WindowPlacement;
             if (placement is not null)
@@ -90,12 +91,12 @@ namespace Random_File_Select
             SetSplitterSafe(splitContainerMiddle, layout.SplitMiddleDistance);
         }
 
-        /// <summary>Populates UI controls, column widths, and controllers from the specified settings.</summary>
-        private void ApplySettings(AppSettings settings)
+        /// <summary>Populates UI controls, column widths, and controllers from the current settings.</summary>
+        private void ApplySettings()
         {
-            rootFoldersController.Load(settings.RootFolders);
+            rootFoldersController.Load(_settings.RootFolders);
 
-            BehaviorSettings behavior = settings.Behavior;
+            BehaviorSettings behavior = _settings.Behavior;
             checkBox_InstantLoadDir.Checked = behavior.LoadRootFoldersOnStart;
             checkBox_InstantFile.Checked = behavior.ChooseRandomFileAfterDir;
             checkBox_InstantOpen.Checked = behavior.InstantlyOpenChosenFiles;
@@ -107,11 +108,11 @@ namespace Random_File_Select
                 Settings_trackBar_LastAccessWeight.Minimum,
                 Settings_trackBar_LastAccessWeight.Maximum);
 
-            ApplyColumnWidth(FileDetails_Header_Directory, settings.Layout.FileDetailsDirectoryColumnWidth);
-            ApplyColumnWidth(FileDetails_Header_Filename, settings.Layout.FileDetailsFilenameColumnWidth);
-            ApplyColumnWidth(FileDetails_Header_LastAccess, settings.Layout.FileDetailsLastAccessColumnWidth);
+            ApplyColumnWidth(FileDetails_Header_Directory, _settings.Layout.FileDetailsDirectoryColumnWidth);
+            ApplyColumnWidth(FileDetails_Header_Filename, _settings.Layout.FileDetailsFilenameColumnWidth);
+            ApplyColumnWidth(FileDetails_Header_LastAccess, _settings.Layout.FileDetailsLastAccessColumnWidth);
 
-            ApplyFilterSettings(settings.Filters);
+            ApplyFilterSettings(_settings.Filters);
         }
 
         /// <summary>Applies filter settings to filter controls.</summary>
@@ -140,30 +141,33 @@ namespace Random_File_Select
         /// <summary>Captures current window placement, splitters, column widths, behaviors, folders, and filters into settings.</summary>
         private void CaptureSettings()
         {
+            var layout = _settings.Layout;
+            var behavior = _settings.Behavior;
+
             WindowPlacementSettings? placement = NativeWindowPlacement.Get(Handle);
             if (placement is not null)
-                _settings.Layout.WindowPlacement = placement;
+                layout.WindowPlacement = placement;
 
             if (WindowState != FormWindowState.Minimized)
             {
-                _settings.Layout.SplitMainDistance = splitContainerMain.SplitterDistance;
-                _settings.Layout.SplitLowerDistance = splitContainerLower.SplitterDistance;
-                _settings.Layout.SplitMiddleDistance = splitContainerMiddle.SplitterDistance;
+                layout.SplitMainDistance = splitContainerMain.SplitterDistance;
+                layout.SplitLowerDistance = splitContainerLower.SplitterDistance;
+                layout.SplitMiddleDistance = splitContainerMiddle.SplitterDistance;
             }
 
-            _settings.Layout.FileDetailsDirectoryColumnWidth = FileDetails_Header_Directory.Width;
-            _settings.Layout.FileDetailsFilenameColumnWidth = FileDetails_Header_Filename.Width;
-            _settings.Layout.FileDetailsLastAccessColumnWidth = FileDetails_Header_LastAccess.Width;
+            layout.FileDetailsDirectoryColumnWidth = FileDetails_Header_Directory.Width;
+            layout.FileDetailsFilenameColumnWidth = FileDetails_Header_Filename.Width;
+            layout.FileDetailsLastAccessColumnWidth = FileDetails_Header_LastAccess.Width;
 
             _settings.RootFolders = rootFoldersController.Export();
 
-            _settings.Behavior.LoadRootFoldersOnStart = checkBox_InstantLoadDir.Checked;
-            _settings.Behavior.ChooseRandomFileAfterDir = checkBox_InstantFile.Checked;
-            _settings.Behavior.InstantlyOpenChosenFiles = checkBox_InstantOpen.Checked;
-            _settings.Behavior.IncludeSubfolders = Settings_checkBox_Subfolders.Checked;
-            _settings.Behavior.DarkMode = Settings_checkBox_DarkMode.Checked;
-            _settings.Behavior.ExcludeDup = FileDetails_checkBox_ExcludeDup.Checked;
-            _settings.Behavior.LastAccessWeight = Settings_trackBar_LastAccessWeight.Value;
+            behavior.LoadRootFoldersOnStart = checkBox_InstantLoadDir.Checked;
+            behavior.ChooseRandomFileAfterDir = checkBox_InstantFile.Checked;
+            behavior.InstantlyOpenChosenFiles = checkBox_InstantOpen.Checked;
+            behavior.IncludeSubfolders = Settings_checkBox_Subfolders.Checked;
+            behavior.DarkMode = Settings_checkBox_DarkMode.Checked;
+            behavior.ExcludeDup = FileDetails_checkBox_ExcludeDup.Checked;
+            behavior.LastAccessWeight = Settings_trackBar_LastAccessWeight.Value;
 
             _settings.Filters = CaptureFilterSettings();
         }
@@ -273,22 +277,6 @@ namespace Random_File_Select
         private void Files_toolStripButton_Next_Click(object sender, EventArgs e)
         {
             filesViewController.SelectRelative(1);
-        }
-
-        private void RootFolders_folderBrowserDialog_Edit_HelpRequest(object sender, EventArgs e)
-        {
-
-        }
-
-        /// <summary>Activates the double-clicked folder node, populating the files ListView, and auto-picks a file when that setting is enabled.</summary>
-        private void Folders_treeView_DblClick(object sender, EventArgs e)
-        {
-            TreeViewHitTestInfo hit = Folders_treeView.HitTest(Folders_treeView.PointToClient(Cursor.Position));
-            if (hit.Node is not null
-                && hit.Location is TreeViewHitTestLocations.Label or TreeViewHitTestLocations.RightOfLabel)
-            {
-                AutoPickFileIfEnabled(foldersTreeController.OnFolderActivated(hit.Node));
-            }
         }
 
         /// <summary>Picks a random file when a folder was just activated and "Choose a random file after selecting a directory" is checked.</summary>

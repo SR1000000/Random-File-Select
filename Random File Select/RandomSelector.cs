@@ -10,7 +10,7 @@ public static class RandomSelector
     private const int RejectionBudgetPerDraw = 4;
 
     /// <summary>Maps a trackbar value to tournament size k (1 at midpoint, up to <see cref="MaxTournamentK"/> at min/max) and a direction (-1 = prefer older, +1 = prefer newer, 0 = uniform).</summary>
-    public static (int k, int Direction) GetTournament(int value, int min, int max)
+    public static (int k, int direction) GetTournament(int value, int min, int max)
     {
         int midpoint = (min + max) / 2;
         int delta = value - midpoint;
@@ -18,13 +18,7 @@ public static class RandomSelector
         int k = halfSpan == 0
             ? 1
             : 1 + (MaxTournamentK - 1) * Math.Abs(delta) / halfSpan;
-        int direction = delta switch
-        {
-            < 0 => -1,
-            > 0 => 1,
-            _ => 0
-        };
-        return (k, direction);
+        return (k, Math.Sign(delta));
     }
 
     /// <summary>Draws k indices uniformly with replacement and returns the one whose timestamp is oldest or newest according to the direction; returns -1 when count is 0.

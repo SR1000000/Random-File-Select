@@ -5,7 +5,6 @@ namespace Random_File_Select;
 public static class NativeWindowPlacement
 {
     private const int SwShowNormal = 1;
-    private const int SwShowMinimized = 2;
     private const int SwShowMaximized = 3;
 
     public static WindowPlacementSettings? Get(IntPtr hwnd)
@@ -34,15 +33,10 @@ public static class NativeWindowPlacement
         if (saved.NormalRight <= saved.NormalLeft || saved.NormalBottom <= saved.NormalTop)
             return;
 
-        int showCmd = MapShowCmdForRestore(saved.ShowCmd);
-
         var placement = new WINDOWPLACEMENT
         {
             length = Marshal.SizeOf<WINDOWPLACEMENT>(),
-            flags = 0,
-            showCmd = showCmd,
-            ptMinPosition = default,
-            ptMaxPosition = default,
+            showCmd = saved.ShowCmd == SwShowMaximized ? SwShowMaximized : SwShowNormal,
             rcNormalPosition = new RECT
             {
                 Left = saved.NormalLeft,
@@ -54,9 +48,6 @@ public static class NativeWindowPlacement
 
         SetWindowPlacement(hwnd, ref placement);
     }
-
-    private static int MapShowCmdForRestore(int showCmd) =>
-        showCmd == SwShowMaximized ? SwShowMaximized : SwShowNormal;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);

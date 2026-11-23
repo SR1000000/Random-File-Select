@@ -78,7 +78,7 @@ public sealed class SettingsStore : ISettingsStore
         settings.Layout ??= new WindowLayoutSettings();
         settings.Behavior ??= new BehaviorSettings();
         settings.Filters ??= new FilterSettings();
-        settings.RootFolders ??= new List<RootFolderEntry>();
-        settings.Filters.ExtensionGroups ??= new List<string>();
+        settings.RootFolders ??= [];
+        settings.Filters.ExtensionGroups ??= [];
     }
 }
