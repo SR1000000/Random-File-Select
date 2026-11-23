@@ -9,8 +9,6 @@ public sealed class FoldersTreeController
     private readonly FilesViewController _filesView;
     private readonly CheckBox _subFoldersCheckBox;
     private readonly List<TreeNode> _matchingNodes = [];
-    private bool _isActivating;
-
     /// <summary>True after a non-PlusMinus left double-click until the next message-loop turn; used to cancel BeforeExpand/Collapse.</summary>
     private bool _suppressExpandCollapse;
 
@@ -80,79 +78,47 @@ public sealed class FoldersTreeController
     }
 
     /// <summary>Repopulates the files ListView from the tree's selected folder; returns false when there is no selection or activation is skipped.</summary>
-    public Task<bool> ReloadFilesFromSelectedFolderAsync()
+    public bool ReloadFilesFromSelectedFolder()
     {
         TreeNode? selected = _tree.SelectedNode;
         if (selected is null)
-            return Task.FromResult(false);
+            return false;
 
-        return OnFolderActivatedAsync(selected);
+        return OnFolderActivated(selected);
     }
 
     /// <summary>Returns whether activating this folder would show at least one file for the given subfolder option.</summary>
     internal static bool ShouldPopulateListView(FolderNode folder, bool includeSubfolders)
         => includeSubfolders ? folder.SubtreeFileCount > 0 : folder.OwnFileCount > 0;
 
-    /// <summary>Locks the owner form while asynchronously populating the files ListView and updating the status strip; returns false when skipped, otherwise true.</summary>
-    public async Task<bool> OnFolderActivatedAsync(TreeNode node)
+    /// <summary>Populates the virtual files ListView from the folder node and updates the status strip; returns false when skipped, otherwise true.</summary>
+    public bool OnFolderActivated(TreeNode node)
     {
-        if (_isActivating || node.Tag is not FolderNode folder)
+        if (node.Tag is not FolderNode folder)
             return false;
 
         bool includeSubfolders = _subFoldersCheckBox.Checked;
         if (!ShouldPopulateListView(folder, includeSubfolders))
             return false;
 
-        _isActivating = true;
-
-        // Disable only the form's top-level controls, except the status strip, so status text can update.
-        // Remember which were enabled so they can be restored.
-        Control? statusHost = _statusLabel.Owner;
-        var disabledControls = new List<Control>();
-        foreach (Control control in _owner.Controls)
-        {
-            if (control == statusHost || !control.Enabled)
-                continue;
-            control.Enabled = false;
-            disabledControls.Add(control);
-        }
-
-        _owner.UseWaitCursor = true;
-        _statusLabel.Text = "Populating...";
-        _statusLabel.ToolTipText = string.Empty;
-        _statusLabel.Owner?.Refresh();
-
-        try
-        {
-            ListViewItem[] items = await Task.Run(() =>
-                FilesViewController.BuildItems(folder, includeSubfolders));
-
-            _filesView.SetItems(items);
-
-            SetStatus(FolderTreeStatusFormatter.FormatFolderActivated(items.Length, folder.DisplayName), folder.FullPath);
-            return true;
-        }
-        finally
-        {
-            _owner.UseWaitCursor = false;
-            foreach (Control control in disabledControls)
-                control.Enabled = true;
-            _isActivating = false;
-        }
+        FileRow[] rows = FilesViewController.BuildRows(folder, includeSubfolders);
+        _filesView.SetRows(rows);
+        SetStatus(FolderTreeStatusFormatter.FormatFolderActivated(rows.Length, folder.DisplayName), folder.FullPath);
+        return true;
     }
 
     /// <summary>Uniformly picks a cached node with matching files, then selects and activates it; returns true if the files ListView was populated.</summary>
-    public async Task<bool> SelectRandomFolderAsync()
+    public bool SelectRandomFolder()
     {
         if (_matchingNodes.Count == 0)
             return false;
 
         TreeNode node = _matchingNodes[Random.Shared.Next(_matchingNodes.Count)];
-        return await ActivateNodeAsync(node);
+        return ActivateNode(node);
     }
 
     /// <summary>Moves to the next or previous matching-folder node (wrapping) from the current tree selection, then activates it; returns false when navigation or populate is skipped.</summary>
-    public async Task<bool> SelectRelativeFolderAsync(int delta)
+    public bool SelectRelativeFolder(int delta)
     {
         int count = _matchingNodes.Count;
         if (count == 0)
@@ -167,18 +133,15 @@ public sealed class FoldersTreeController
             return false;
 
         int nextIndex = WrapMatchingIndex(index, delta, count);
-        return await ActivateNodeAsync(_matchingNodes[nextIndex]);
+        return ActivateNode(_matchingNodes[nextIndex]);
     }
 
-    /// <summary>Selects and reveals a folder node only when activation can start; returns whether the files ListView was populated.</summary>
-    private async Task<bool> ActivateNodeAsync(TreeNode node)
+    /// <summary>Selects and reveals a folder node, then activates it; returns whether the files ListView was populated.</summary>
+    private bool ActivateNode(TreeNode node)
     {
-        if (_isActivating)
-            return false;
-
         _tree.SelectedNode = node;
         node.EnsureVisible();
-        return await OnFolderActivatedAsync(node);
+        return OnFolderActivated(node);
     }
 
     /// <summary>Steps index by delta within [0, count), wrapping at both ends.</summary>

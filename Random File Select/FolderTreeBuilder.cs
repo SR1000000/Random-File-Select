@@ -14,8 +14,12 @@ public sealed record RetainedFile(string FileName, DateTime LastWriteTime, DateT
     public DateTime LastAccessTime { get; set; } = LastAccessTime;
 }
 
-/// <summary>A file shown in the files ListView: its full path plus the RetainedFile instance shared with its FolderNode.</summary>
-public sealed record FileListEntry(string FullPath, RetainedFile File);
+/// <summary>A file shown in the files ListView: its containing folder's full path plus the RetainedFile instance shared with that FolderNode.</summary>
+public readonly record struct FileRow(string FolderPath, RetainedFile File)
+{
+    /// <summary>Full path of the file, computed on demand.</summary>
+    public string FullPath => Path.Combine(FolderPath, File.FileName);
+}
 
 /// <summary>Shown folder: display label, true full path, shown descendants, and its own matching files (immutable except each RetainedFile.LastAccessTime, which the app updates).</summary>
 public sealed record FolderNode(

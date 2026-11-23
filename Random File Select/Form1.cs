@@ -240,24 +240,24 @@ namespace Random_File_Select
             foldersTreeController.Load(checkedPaths, filter);
         }
 
-        private async void Folders_toolStripButton_Prev_Click(object sender, EventArgs e)
+        private void Folders_toolStripButton_Prev_Click(object sender, EventArgs e)
         {
-            AutoPickFileIfEnabled(await foldersTreeController.SelectRelativeFolderAsync(-1));
+            AutoPickFileIfEnabled(foldersTreeController.SelectRelativeFolder(-1));
         }
 
-        private async void Folders_toolStripButton_Random_Click(object sender, EventArgs e)
+        private void Folders_toolStripButton_Random_Click(object sender, EventArgs e)
         {
-            AutoPickFileIfEnabled(await foldersTreeController.SelectRandomFolderAsync());
+            AutoPickFileIfEnabled(foldersTreeController.SelectRandomFolder());
         }
 
-        private async void Folders_toolStripButton_Next_Click(object sender, EventArgs e)
+        private void Folders_toolStripButton_Next_Click(object sender, EventArgs e)
         {
-            AutoPickFileIfEnabled(await foldersTreeController.SelectRelativeFolderAsync(1));
+            AutoPickFileIfEnabled(foldersTreeController.SelectRelativeFolder(1));
         }
 
-        private async void Files_toolStripButton_Reload_Click(object sender, EventArgs e)
+        private void Files_toolStripButton_Reload_Click(object sender, EventArgs e)
         {
-            await foldersTreeController.ReloadFilesFromSelectedFolderAsync();
+            foldersTreeController.ReloadFilesFromSelectedFolder();
         }
 
         private void Files_toolStripButton_Prev_Click(object sender, EventArgs e)
@@ -280,14 +280,14 @@ namespace Random_File_Select
 
         }
 
-        /// <summary>Activates the double-clicked folder node, locking the form while populating the files ListView, and auto-picks a file when that setting is enabled.</summary>
-        private async void Folders_treeView_DblClick(object sender, EventArgs e)
+        /// <summary>Activates the double-clicked folder node, populating the files ListView, and auto-picks a file when that setting is enabled.</summary>
+        private void Folders_treeView_DblClick(object sender, EventArgs e)
         {
             TreeViewHitTestInfo hit = Folders_treeView.HitTest(Folders_treeView.PointToClient(Cursor.Position));
             if (hit.Node is not null
                 && hit.Location is TreeViewHitTestLocations.Label or TreeViewHitTestLocations.RightOfLabel)
             {
-                AutoPickFileIfEnabled(await foldersTreeController.OnFolderActivatedAsync(hit.Node));
+                AutoPickFileIfEnabled(foldersTreeController.OnFolderActivated(hit.Node));
             }
         }
 

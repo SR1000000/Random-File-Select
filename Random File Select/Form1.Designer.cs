@@ -86,9 +86,9 @@
             splitContainerMain = new SplitContainer();
             splitContainerLower = new SplitContainer();
             panel1 = new Panel();
+            FileDetails_checkBox_ExcludeDup = new CheckBox();
             RootFolders_folderBrowserDialog_Edit = new FolderBrowserDialog();
             RootFolders_folderBrowserDialog_Add = new FolderBrowserDialog();
-            FileDetails_checkBox_ExcludeDup = new CheckBox();
             Bottom_StatusStrip.SuspendLayout();
             TableLayoutPanel_Top.SuspendLayout();
             TopPanel_groupBoxLeft.SuspendLayout();
@@ -594,6 +594,7 @@
             Files_listView.TabIndex = 3;
             Files_listView.UseCompatibleStateImageBehavior = false;
             Files_listView.View = View.List;
+            Files_listView.VirtualMode = true;
             Files_listView.ItemActivate += Files_listView_Activate;
             // 
             // Files_toolStrip
@@ -708,15 +709,6 @@
             panel1.Size = new Size(644, 24);
             panel1.TabIndex = 2;
             // 
-            // RootFolders_folderBrowserDialog_Edit
-            // 
-            RootFolders_folderBrowserDialog_Edit.AutoUpgradeEnabled = false;
-            RootFolders_folderBrowserDialog_Edit.HelpRequest += RootFolders_folderBrowserDialog_Edit_HelpRequest;
-            // 
-            // RootFolders_folderBrowserDialog_Add
-            // 
-            RootFolders_folderBrowserDialog_Add.AutoUpgradeEnabled = false;
-            // 
             // FileDetails_checkBox_ExcludeDup
             // 
             FileDetails_checkBox_ExcludeDup.AutoSize = true;
@@ -728,6 +720,15 @@
             FileDetails_checkBox_ExcludeDup.TabIndex = 9;
             FileDetails_checkBox_ExcludeDup.Text = "Files listed in the Log below are excluded from random selection";
             FileDetails_checkBox_ExcludeDup.UseVisualStyleBackColor = true;
+            // 
+            // RootFolders_folderBrowserDialog_Edit
+            // 
+            RootFolders_folderBrowserDialog_Edit.AutoUpgradeEnabled = false;
+            RootFolders_folderBrowserDialog_Edit.HelpRequest += RootFolders_folderBrowserDialog_Edit_HelpRequest;
+            // 
+            // RootFolders_folderBrowserDialog_Add
+            // 
+            RootFolders_folderBrowserDialog_Add.AutoUpgradeEnabled = false;
             // 
             // Form1
             // 

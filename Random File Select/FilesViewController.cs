@@ -18,6 +18,9 @@ public sealed class FilesViewController
     private readonly ToolStripStatusLabel _statusLabel;
     private readonly Form _owner;
 
+    /// <summary>Rows backing the virtual files ListView.</summary>
+    private FileRow[] _rows = [];
+
     /// <summary>Full path to the number of log rows referencing it (case-insensitive); kept in sync by LogSelection and ClearLog.</summary>
     private readonly Dictionary<string, int> _loggedPathCounts = new(StringComparer.OrdinalIgnoreCase);
 
@@ -38,26 +41,29 @@ public sealed class FilesViewController
         _excludeDup = excludeDup;
         _statusLabel = statusLabel;
         _owner = owner;
+        _listView.RetrieveVirtualItem += OnRetrieveVirtualItem;
     }
 
-    /// <summary>Builds ListViewItems for a folder's files (and its subfolders' files when requested), each tagged with a FileListEntry; safe to call off the UI thread.</summary>
-    public static ListViewItem[] BuildItems(FolderNode folder, bool includeSubfolders)
+    /// <summary>Builds the flat row array for a folder's files (and its subfolders' files when requested); safe to call off the UI thread.</summary>
+    public static FileRow[] BuildRows(FolderNode folder, bool includeSubfolders)
     {
-        int capacity = includeSubfolders ? folder.SubtreeFileCount : folder.Files.Length;
-        var list = new List<ListViewItem>(capacity);
-        AppendFolderItems(folder, includeSubfolders, list);
-        return list.ToArray();
+        var rows = new FileRow[includeSubfolders ? folder.SubtreeFileCount : folder.Files.Length];
+        int index = 0;
+        AppendFolderRows(folder, includeSubfolders, rows, ref index);
+        return rows;
     }
 
-    /// <summary>Replaces the ListView contents with the given items inside BeginUpdate/EndUpdate.</summary>
-    public void SetItems(ListViewItem[] items)
+    /// <summary>Replaces the virtual list contents with the given rows, clearing selection and scrolling to the top.</summary>
+    public void SetRows(FileRow[] rows)
     {
         _listView.BeginUpdate();
         try
         {
-            _listView.Items.Clear();
-            if (items.Length > 0)
-                _listView.Items.AddRange(items);
+            _listView.SelectedIndices.Clear();
+            _rows = rows;
+            _listView.VirtualListSize = rows.Length;
+            if (rows.Length > 0)
+                _listView.EnsureVisible(0);
         }
         finally
         {
@@ -65,24 +71,34 @@ public sealed class FilesViewController
         }
     }
 
-    /// <summary>Returns the FileListEntry tag of the files ListView item at index (all items are tagged by BuildItems).</summary>
-    private FileListEntry EntryAt(int index) => (FileListEntry)_listView.Items[index].Tag!;
+    /// <summary>Supplies the virtual item for the requested index.</summary>
+    private void OnRetrieveVirtualItem(object? sender, RetrieveVirtualItemEventArgs e)
+    {
+        if ((uint)e.ItemIndex >= (uint)_rows.Length)
+        {
+            e.Item = new ListViewItem(string.Empty);
+            return;
+        }
+
+        FileRow row = _rows[e.ItemIndex];
+        e.Item = new ListViewItem(row.File.FileName) { ToolTipText = row.FullPath };
+    }
 
     /// <summary>Picks an item by tournament selection on Last Accessed, skipping files already in the log when Exclude Duplicates is checked, then selects it (and opens when Instantly Open is checked);
     /// returns false when the list is empty, or after showing a dialog when every file is already logged.</summary>
     public bool SelectRandom()
     {
-        int count = _listView.Items.Count;
+        int count = _rows.Length;
         if (count == 0)
             return false;
 
-        Func<int, DateTime> timestampAt = i => EntryAt(i).File.LastAccessTime;
+        Func<int, DateTime> timestampAt = i => _rows[i].File.LastAccessTime;
         int value = _lastAccessWeight.Value, min = _lastAccessWeight.Minimum, max = _lastAccessWeight.Maximum;
 
         int index = !_excludeDup.Checked || _loggedPathCounts.Count == 0
             ? RandomSelector.PickTournamentIndex(count, timestampAt, value, min, max, Random.Shared)
             : RandomSelector.PickTournamentIndex(
-                count, timestampAt, i => !_loggedPathCounts.ContainsKey(EntryAt(i).FullPath), value, min, max, Random.Shared);
+                count, timestampAt, i => !_loggedPathCounts.ContainsKey(_rows[i].FullPath), value, min, max, Random.Shared);
 
         if (index < 0)
         {
@@ -91,7 +107,7 @@ public sealed class FilesViewController
                 "Every file in this list is already in the log. Clear the log or uncheck the exclusion option to pick again.",
                 "No Files Available",
                 MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+                MessageBoxIcon.None);
             return false;
         }
 
@@ -101,7 +117,7 @@ public sealed class FilesViewController
     /// <summary>Steps to the adjacent list item (wrapping) from the current selection, then selects it (and opens when Instantly Open is checked); returns false when the list is empty or nothing is selected.</summary>
     public bool SelectRelative(int delta)
     {
-        int count = _listView.Items.Count;
+        int count = _rows.Length;
         if (count == 0 || _listView.SelectedIndices.Count == 0)
             return false;
 
@@ -112,19 +128,20 @@ public sealed class FilesViewController
     /// <summary>Selects, focuses, and reveals the item at index; sets status text for random vs sequential choice; opens when Instantly Open is checked.</summary>
     private bool SelectItemAtIndex(int index, bool randomChoice)
     {
-        if ((uint)index >= (uint)_listView.Items.Count)
+        if ((uint)index >= (uint)_rows.Length)
             return false;
 
-        ListViewItem item = _listView.Items[index];
-        item.Selected = true;
-        item.Focused = true;
-        item.EnsureVisible();
+        FileRow row = _rows[index];
+        _listView.SelectedIndices.Clear();
+        _listView.SelectedIndices.Add(index);
+        _listView.FocusedItem = _listView.Items[index];
+        _listView.EnsureVisible(index);
         _listView.Focus();
 
-        SetFileStatus(item, randomChoice);
-        LogSelection(item);
+        SetFileStatus(row, randomChoice);
+        LogSelection(row);
 
-        if (_instantOpen.Checked && OpenItem(item))
+        if (_instantOpen.Checked && OpenFile(row))
             _statusLabel.Text += "  File opened.";
 
         return true;
@@ -134,31 +151,30 @@ public sealed class FilesViewController
     private static int WrapFileIndex(int index, int delta, int count)
         => ((index + delta) % count + count) % count;
 
-    /// <summary>Appends the item's directory, filename, and current Last Accessed time to the bottom of the log, tagged with the same FileListEntry so it can be opened later; drops the oldest row once the log exceeds MaxLogEntries; increments the path's logged count and decrements the evicted row's.</summary>
-    private void LogSelection(ListViewItem item)
+    /// <summary>Appends the item's directory, filename, and current Last Accessed time to the bottom of the log, tagged with the same FileRow so it can be opened later; drops the oldest row once the log exceeds MaxLogEntries; increments the path's logged count and decrements the evicted row's.</summary>
+    private void LogSelection(FileRow row)
     {
-        if (item.Tag is not FileListEntry entry)
-            return;
+        string fullPath = row.FullPath;
 
         var logItem = new ListViewItem(new string[]
         {
-            Path.GetDirectoryName(entry.FullPath) ?? string.Empty,
-            entry.File.FileName,
-            entry.File.LastAccessTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+            row.FolderPath,
+            row.File.FileName,
+            row.File.LastAccessTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
         })
         {
-            Tag = entry,
-            ToolTipText = entry.FullPath
+            Tag = row,
+            ToolTipText = fullPath
         };
 
         _logListView.BeginUpdate();
         try
         {
             _logListView.Items.Add(logItem);
-            _loggedPathCounts[entry.FullPath] = _loggedPathCounts.GetValueOrDefault(entry.FullPath) + 1;
+            _loggedPathCounts[fullPath] = _loggedPathCounts.GetValueOrDefault(fullPath) + 1;
             if (_logListView.Items.Count > MaxLogEntries)
             {
-                string evictedPath = ((FileListEntry)_logListView.Items[0].Tag!).FullPath;
+                string evictedPath = ((FileRow)_logListView.Items[0].Tag!).FullPath;
                 _logListView.Items.RemoveAt(0);
                 if (--_loggedPathCounts[evictedPath] == 0)
                     _loggedPathCounts.Remove(evictedPath);
@@ -197,39 +213,36 @@ public sealed class FilesViewController
         ListViewItem item = _logListView.SelectedItems[0];
         _statusLabel.Text = string.Create(CultureInfo.InvariantCulture, $"Selected \"{item.SubItems[1].Text}\" from log.");
 
-        if (OpenItem(item))
+        if (OpenFile((FileRow)item.Tag!))
             _statusLabel.Text += "  File opened.";
     }
 
-    /// <summary>Sets the status strip to random or manual selection for the given list item.</summary>
-    private void SetFileStatus(ListViewItem item, bool randomChoice)
+    /// <summary>Sets the status strip to random or manual selection for the given row.</summary>
+    private void SetFileStatus(FileRow row, bool randomChoice)
     {
         _statusLabel.Text = randomChoice
-            ? string.Create(CultureInfo.InvariantCulture, $"Randomly chose \"{item.Text}\".")
-            : string.Create(CultureInfo.InvariantCulture, $"Selected \"{item.Text}\".");
+            ? string.Create(CultureInfo.InvariantCulture, $"Randomly chose \"{row.File.FileName}\".")
+            : string.Create(CultureInfo.InvariantCulture, $"Selected \"{row.File.FileName}\".");
     }
 
-    /// <summary>Opens the first selected item when present; sets manual-selection status and appends "File opened." when launch succeeds.</summary>
+    /// <summary>Opens the first selected row when present; sets manual-selection status and appends "File opened." when launch succeeds.</summary>
     public void OpenSelected()
     {
-        if (_listView.SelectedItems.Count == 0)
+        if (_listView.SelectedIndices.Count == 0)
             return;
 
-        ListViewItem item = _listView.SelectedItems[0];
-        SetFileStatus(item, randomChoice: false);
-        LogSelection(item);
+        FileRow row = _rows[_listView.SelectedIndices[0]];
+        SetFileStatus(row, randomChoice: false);
+        LogSelection(row);
 
-        if (OpenItem(item))
+        if (OpenFile(row))
             _statusLabel.Text += "  File opened.";
     }
 
-    /// <summary>Opens the item's file with the default shell handler and, on success, sets its stored Last Accessed time to now; reports errors except a user-cancelled UAC prompt; returns whether the default handler was started.</summary>
-    public bool OpenItem(ListViewItem item)
+    /// <summary>Opens the row's file with the default shell handler and, on success, sets its stored Last Accessed time to now; reports errors except a user-cancelled UAC prompt; returns whether the default handler was started.</summary>
+    private bool OpenFile(FileRow row)
     {
-        if (item.Tag is not FileListEntry entry)
-            return false;
-
-        string filePath = entry.FullPath;
+        string filePath = row.FullPath;
         if (string.IsNullOrEmpty(filePath))
             return false;
 
@@ -239,7 +252,7 @@ public sealed class FilesViewController
             {
                 UseShellExecute = true
             });
-            entry.File.LastAccessTime = DateTime.Now;
+            row.File.LastAccessTime = DateTime.Now;
             return true;
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
@@ -259,23 +272,16 @@ public sealed class FilesViewController
         }
     }
 
-    /// <summary>Appends list items for folder files and, when requested, descendant folders.</summary>
-    private static void AppendFolderItems(FolderNode folder, bool includeSubfolders, List<ListViewItem> items)
+    /// <summary>Writes rows for folder files and, when requested, descendant folders (own files first, depth-first).</summary>
+    private static void AppendFolderRows(FolderNode folder, bool includeSubfolders, FileRow[] rows, ref int index)
     {
         foreach (RetainedFile file in folder.Files)
-        {
-            string fullPath = Path.Combine(folder.FullPath, file.FileName);
-            items.Add(new ListViewItem(file.FileName)
-            {
-                Tag = new FileListEntry(fullPath, file),
-                ToolTipText = fullPath
-            });
-        }
+            rows[index++] = new FileRow(folder.FullPath, file);
 
         if (includeSubfolders)
         {
             foreach (FolderNode child in folder.Children)
-                AppendFolderItems(child, true, items);
+                AppendFolderRows(child, true, rows, ref index);
         }
     }
 }
