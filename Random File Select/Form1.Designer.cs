@@ -57,14 +57,16 @@
             label2 = new Label();
             label1 = new Label();
             TopPanel_groupBoxRight = new GroupBox();
-            Settings_checkBox_DarkMode = new CheckBox();
+            label9 = new Label();
+            label5 = new Label();
+            Settings_comboBox_DarkLight = new ComboBox();
+            Settings_button_Help = new Button();
+            Settings_button_About = new Button();
             Settings_checkBox_Subfolders = new CheckBox();
             label4 = new Label();
             Settings_trackBar_LastAccessWeight = new TrackBar();
             checkBox_InstantOpen = new CheckBox();
             checkBox_InstantFile = new CheckBox();
-            checkBox_InstantLoadDir = new CheckBox();
-            Settings_button_About = new Button();
             FileDetails_button_ClearLog = new Button();
             splitContainerMiddle = new SplitContainer();
             Folders_treeView = new TreeView();
@@ -140,7 +142,7 @@
             FileDetails_listView.Location = new Point(0, 24);
             FileDetails_listView.MultiSelect = false;
             FileDetails_listView.Name = "FileDetails_listView";
-            FileDetails_listView.Size = new Size(646, 105);
+            FileDetails_listView.Size = new Size(646, 110);
             FileDetails_listView.TabIndex = 1;
             FileDetails_listView.UseCompatibleStateImageBehavior = false;
             FileDetails_listView.View = View.Details;
@@ -172,11 +174,11 @@
             TableLayoutPanel_Top.Controls.Add(TopPanel_groupBoxRight, 2, 0);
             TableLayoutPanel_Top.Dock = DockStyle.Fill;
             TableLayoutPanel_Top.Location = new Point(0, 0);
-            TableLayoutPanel_Top.MinimumSize = new Size(0, 255);
+            TableLayoutPanel_Top.MinimumSize = new Size(0, 245);
             TableLayoutPanel_Top.Name = "TableLayoutPanel_Top";
             TableLayoutPanel_Top.RowCount = 1;
             TableLayoutPanel_Top.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            TableLayoutPanel_Top.Size = new Size(646, 255);
+            TableLayoutPanel_Top.Size = new Size(646, 245);
             TableLayoutPanel_Top.TabIndex = 2;
             // 
             // TopPanel_groupBoxLeft
@@ -186,7 +188,7 @@
             TopPanel_groupBoxLeft.Dock = DockStyle.Fill;
             TopPanel_groupBoxLeft.Location = new Point(3, 3);
             TopPanel_groupBoxLeft.Name = "TopPanel_groupBoxLeft";
-            TopPanel_groupBoxLeft.Size = new Size(200, 249);
+            TopPanel_groupBoxLeft.Size = new Size(200, 239);
             TopPanel_groupBoxLeft.TabIndex = 0;
             TopPanel_groupBoxLeft.TabStop = false;
             TopPanel_groupBoxLeft.Text = "Root folders";
@@ -200,7 +202,7 @@
             RootFolders_checkedListBox.IntegralHeight = false;
             RootFolders_checkedListBox.Location = new Point(3, 51);
             RootFolders_checkedListBox.Name = "RootFolders_checkedListBox";
-            RootFolders_checkedListBox.Size = new Size(194, 195);
+            RootFolders_checkedListBox.Size = new Size(194, 185);
             RootFolders_checkedListBox.TabIndex = 3;
             // 
             // panel2
@@ -262,7 +264,7 @@
             TopPanel_groupBoxCenter.Dock = DockStyle.Fill;
             TopPanel_groupBoxCenter.Location = new Point(209, 3);
             TopPanel_groupBoxCenter.Name = "TopPanel_groupBoxCenter";
-            TopPanel_groupBoxCenter.Size = new Size(222, 249);
+            TopPanel_groupBoxCenter.Size = new Size(222, 239);
             TopPanel_groupBoxCenter.TabIndex = 1;
             TopPanel_groupBoxCenter.TabStop = false;
             TopPanel_groupBoxCenter.Text = "Filters";
@@ -329,7 +331,7 @@
             // label6
             // 
             label6.Dock = DockStyle.Bottom;
-            label6.Location = new Point(3, 196);
+            label6.Location = new Point(3, 186);
             label6.Name = "label6";
             label6.Size = new Size(216, 50);
             label6.TabIndex = 6;
@@ -387,34 +389,74 @@
             // 
             // TopPanel_groupBoxRight
             // 
-            TopPanel_groupBoxRight.Controls.Add(Settings_checkBox_DarkMode);
+            TopPanel_groupBoxRight.Controls.Add(label9);
+            TopPanel_groupBoxRight.Controls.Add(label5);
+            TopPanel_groupBoxRight.Controls.Add(Settings_comboBox_DarkLight);
+            TopPanel_groupBoxRight.Controls.Add(Settings_button_Help);
+            TopPanel_groupBoxRight.Controls.Add(Settings_button_About);
             TopPanel_groupBoxRight.Controls.Add(Settings_checkBox_Subfolders);
             TopPanel_groupBoxRight.Controls.Add(label4);
             TopPanel_groupBoxRight.Controls.Add(Settings_trackBar_LastAccessWeight);
             TopPanel_groupBoxRight.Controls.Add(checkBox_InstantOpen);
             TopPanel_groupBoxRight.Controls.Add(checkBox_InstantFile);
-            TopPanel_groupBoxRight.Controls.Add(checkBox_InstantLoadDir);
             TopPanel_groupBoxRight.Dock = DockStyle.Fill;
             TopPanel_groupBoxRight.Location = new Point(437, 3);
             TopPanel_groupBoxRight.Name = "TopPanel_groupBoxRight";
-            TopPanel_groupBoxRight.Size = new Size(206, 249);
+            TopPanel_groupBoxRight.Size = new Size(206, 239);
             TopPanel_groupBoxRight.TabIndex = 2;
             TopPanel_groupBoxRight.TabStop = false;
             TopPanel_groupBoxRight.Text = "Settings";
             // 
-            // Settings_checkBox_DarkMode
+            // label9
             // 
-            Settings_checkBox_DarkMode.AutoSize = true;
-            Settings_checkBox_DarkMode.Location = new Point(6, 156);
-            Settings_checkBox_DarkMode.Name = "Settings_checkBox_DarkMode";
-            Settings_checkBox_DarkMode.Size = new Size(173, 19);
-            Settings_checkBox_DarkMode.TabIndex = 6;
-            Settings_checkBox_DarkMode.Text = "Dark Mode (requires restart)";
-            Settings_checkBox_DarkMode.UseVisualStyleBackColor = true;
+            label9.AutoSize = true;
+            label9.Location = new Point(6, 127);
+            label9.Name = "label9";
+            label9.Size = new Size(63, 15);
+            label9.TabIndex = 12;
+            label9.Text = "Dark/Light";
+            // 
+            // label5
+            // 
+            label5.Location = new Point(143, 118);
+            label5.Name = "label5";
+            label5.Size = new Size(57, 32);
+            label5.TabIndex = 11;
+            label5.Text = "(Requires Restart)";
+            // 
+            // Settings_comboBox_DarkLight
+            // 
+            Settings_comboBox_DarkLight.DropDownStyle = ComboBoxStyle.DropDownList;
+            Settings_comboBox_DarkLight.FormattingEnabled = true;
+            Settings_comboBox_DarkLight.Items.AddRange(new object[] { "System", "Light", "Dark" });
+            Settings_comboBox_DarkLight.Location = new Point(70, 122);
+            Settings_comboBox_DarkLight.Name = "Settings_comboBox_DarkLight";
+            Settings_comboBox_DarkLight.Size = new Size(62, 23);
+            Settings_comboBox_DarkLight.TabIndex = 10;
+            // 
+            // Settings_button_Help
+            // 
+            Settings_button_Help.Location = new Point(23, 210);
+            Settings_button_Help.Name = "Settings_button_Help";
+            Settings_button_Help.Size = new Size(82, 23);
+            Settings_button_Help.TabIndex = 9;
+            Settings_button_Help.Text = "How to Use";
+            Settings_button_Help.UseVisualStyleBackColor = true;
+            // 
+            // Settings_button_About
+            // 
+            Settings_button_About.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            Settings_button_About.Location = new Point(124, 210);
+            Settings_button_About.Name = "Settings_button_About";
+            Settings_button_About.Size = new Size(48, 23);
+            Settings_button_About.TabIndex = 8;
+            Settings_button_About.Text = "About";
+            Settings_button_About.UseVisualStyleBackColor = true;
+            Settings_button_About.Click += Settings_button_About_Click;
             // 
             // Settings_checkBox_Subfolders
             // 
-            Settings_checkBox_Subfolders.Location = new Point(6, 116);
+            Settings_checkBox_Subfolders.Location = new Point(6, 86);
             Settings_checkBox_Subfolders.Name = "Settings_checkBox_Subfolders";
             Settings_checkBox_Subfolders.Size = new Size(166, 34);
             Settings_checkBox_Subfolders.TabIndex = 5;
@@ -423,7 +465,7 @@
             // 
             // label4
             // 
-            label4.Location = new Point(3, 178);
+            label4.Location = new Point(3, 148);
             label4.Name = "label4";
             label4.Size = new Size(201, 32);
             label4.TabIndex = 4;
@@ -432,7 +474,7 @@
             // Settings_trackBar_LastAccessWeight
             // 
             Settings_trackBar_LastAccessWeight.LargeChange = 2;
-            Settings_trackBar_LastAccessWeight.Location = new Point(2, 213);
+            Settings_trackBar_LastAccessWeight.Location = new Point(2, 183);
             Settings_trackBar_LastAccessWeight.Name = "Settings_trackBar_LastAccessWeight";
             Settings_trackBar_LastAccessWeight.Size = new Size(195, 45);
             Settings_trackBar_LastAccessWeight.TabIndex = 3;
@@ -441,7 +483,7 @@
             // checkBox_InstantOpen
             // 
             checkBox_InstantOpen.AutoSize = true;
-            checkBox_InstantOpen.Location = new Point(6, 91);
+            checkBox_InstantOpen.Location = new Point(6, 60);
             checkBox_InstantOpen.Name = "checkBox_InstantOpen";
             checkBox_InstantOpen.Size = new Size(166, 19);
             checkBox_InstantOpen.TabIndex = 2;
@@ -450,33 +492,12 @@
             // 
             // checkBox_InstantFile
             // 
-            checkBox_InstantFile.Location = new Point(6, 43);
+            checkBox_InstantFile.Location = new Point(6, 13);
             checkBox_InstantFile.Name = "checkBox_InstantFile";
             checkBox_InstantFile.Size = new Size(166, 42);
             checkBox_InstantFile.TabIndex = 1;
             checkBox_InstantFile.Text = "Choose a random file after selecting a directory";
             checkBox_InstantFile.UseVisualStyleBackColor = true;
-            // 
-            // checkBox_InstantLoadDir
-            // 
-            checkBox_InstantLoadDir.AutoSize = true;
-            checkBox_InstantLoadDir.Location = new Point(6, 21);
-            checkBox_InstantLoadDir.Name = "checkBox_InstantLoadDir";
-            checkBox_InstantLoadDir.Size = new Size(159, 19);
-            checkBox_InstantLoadDir.TabIndex = 0;
-            checkBox_InstantLoadDir.Text = "Load root folders on start";
-            checkBox_InstantLoadDir.UseVisualStyleBackColor = true;
-            // 
-            // Settings_button_About
-            // 
-            Settings_button_About.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            Settings_button_About.Location = new Point(595, -1);
-            Settings_button_About.Name = "Settings_button_About";
-            Settings_button_About.Size = new Size(48, 23);
-            Settings_button_About.TabIndex = 8;
-            Settings_button_About.Text = "About";
-            Settings_button_About.UseVisualStyleBackColor = true;
-            Settings_button_About.Click += Settings_button_About_Click;
             // 
             // FileDetails_button_ClearLog
             // 
@@ -504,7 +525,7 @@
             // 
             splitContainerMiddle.Panel2.Controls.Add(Files_listView);
             splitContainerMiddle.Panel2.Controls.Add(Files_toolStrip);
-            splitContainerMiddle.Size = new Size(646, 185);
+            splitContainerMiddle.Size = new Size(646, 190);
             splitContainerMiddle.SplitterDistance = 308;
             splitContainerMiddle.TabIndex = 3;
             // 
@@ -516,7 +537,7 @@
             Folders_treeView.Location = new Point(0, 25);
             Folders_treeView.Name = "Folders_treeView";
             Folders_treeView.ShowNodeToolTips = true;
-            Folders_treeView.Size = new Size(304, 156);
+            Folders_treeView.Size = new Size(304, 161);
             Folders_treeView.TabIndex = 0;
             // 
             // Folders_toolStrip
@@ -589,7 +610,7 @@
             Files_listView.MultiSelect = false;
             Files_listView.Name = "Files_listView";
             Files_listView.ShowItemToolTips = true;
-            Files_listView.Size = new Size(330, 156);
+            Files_listView.Size = new Size(330, 161);
             Files_listView.TabIndex = 3;
             Files_listView.UseCompatibleStateImageBehavior = false;
             Files_listView.View = View.List;
@@ -670,13 +691,13 @@
             // splitContainerMain.Panel1
             // 
             splitContainerMain.Panel1.Controls.Add(TableLayoutPanel_Top);
-            splitContainerMain.Panel1MinSize = 255;
+            splitContainerMain.Panel1MinSize = 245;
             // 
             // splitContainerMain.Panel2
             // 
             splitContainerMain.Panel2.Controls.Add(splitContainerLower);
             splitContainerMain.Size = new Size(646, 577);
-            splitContainerMain.SplitterDistance = 255;
+            splitContainerMain.SplitterDistance = 245;
             splitContainerMain.TabIndex = 4;
             splitContainerMain.TabStop = false;
             // 
@@ -695,14 +716,13 @@
             // 
             splitContainerLower.Panel2.Controls.Add(FileDetails_listView);
             splitContainerLower.Panel2.Controls.Add(panel1);
-            splitContainerLower.Size = new Size(646, 318);
-            splitContainerLower.SplitterDistance = 185;
+            splitContainerLower.Size = new Size(646, 328);
+            splitContainerLower.SplitterDistance = 190;
             splitContainerLower.TabIndex = 0;
             // 
             // panel1
             // 
             panel1.Controls.Add(FileDetails_checkBox_ExcludeDup);
-            panel1.Controls.Add(Settings_button_About);
             panel1.Controls.Add(FileDetails_button_ClearLog);
             panel1.Dock = DockStyle.Top;
             panel1.Location = new Point(0, 0);
@@ -799,7 +819,6 @@
         private Label label1;
         private CheckBox checkBox_InstantOpen;
         private CheckBox checkBox_InstantFile;
-        private CheckBox checkBox_InstantLoadDir;
         private SplitContainer splitContainerMiddle;
         private ColumnHeader FileDetails_Header_LastAccess;
         private TreeView Folders_treeView;
@@ -836,8 +855,11 @@
         private FolderBrowserDialog RootFolders_folderBrowserDialog_Add;
         private Button Settings_button_About;
         private Button FileDetails_button_ClearLog;
-        private CheckBox Settings_checkBox_DarkMode;
         private Panel panel1;
         private CheckBox FileDetails_checkBox_ExcludeDup;
+        private Button Settings_button_Help;
+        private ComboBox Settings_comboBox_DarkLight;
+        private Label label9;
+        private Label label5;
     }
 }

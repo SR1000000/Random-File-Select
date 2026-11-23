@@ -20,6 +20,7 @@ namespace Random_File_Select
             _settings = settings;
             _settingsStore = settingsStore;
 
+            Settings_comboBox_DarkLight.DataSource = Enum.GetValues<AppColorMode>();
             filtersController = new FiltersController(Filters_comboBox_Extensions);
             rootFoldersController = new RootFoldersController(
                 RootFolders_checkedListBox,
@@ -97,11 +98,10 @@ namespace Random_File_Select
             rootFoldersController.Load(_settings.RootFolders);
 
             BehaviorSettings behavior = _settings.Behavior;
-            checkBox_InstantLoadDir.Checked = behavior.LoadRootFoldersOnStart;
             checkBox_InstantFile.Checked = behavior.ChooseRandomFileAfterDir;
             checkBox_InstantOpen.Checked = behavior.InstantlyOpenChosenFiles;
             Settings_checkBox_Subfolders.Checked = behavior.IncludeSubfolders;
-            Settings_checkBox_DarkMode.Checked = behavior.DarkMode;
+            Settings_comboBox_DarkLight.SelectedItem = behavior.ColorMode;
             FileDetails_checkBox_ExcludeDup.Checked = behavior.ExcludeDup;
             Settings_trackBar_LastAccessWeight.Value = Math.Clamp(
                 behavior.LastAccessWeight,
@@ -161,11 +161,12 @@ namespace Random_File_Select
 
             _settings.RootFolders = rootFoldersController.Export();
 
-            behavior.LoadRootFoldersOnStart = checkBox_InstantLoadDir.Checked;
             behavior.ChooseRandomFileAfterDir = checkBox_InstantFile.Checked;
             behavior.InstantlyOpenChosenFiles = checkBox_InstantOpen.Checked;
             behavior.IncludeSubfolders = Settings_checkBox_Subfolders.Checked;
-            behavior.DarkMode = Settings_checkBox_DarkMode.Checked;
+            behavior.ColorMode = Settings_comboBox_DarkLight.SelectedItem is AppColorMode mode
+                ? mode
+                : AppColorMode.System;
             behavior.ExcludeDup = FileDetails_checkBox_ExcludeDup.Checked;
             behavior.LastAccessWeight = Settings_trackBar_LastAccessWeight.Value;
 

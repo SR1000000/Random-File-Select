@@ -72,12 +72,14 @@ public sealed class SettingsStore : ISettingsStore
         File.Move(tempPath, _filePath, overwrite: true);
     }
 
-    /// <summary>Ensures nested settings instances and collections are non-null.</summary>
+    /// <summary>Ensures nested settings instances and collections are non-null and enum values are defined.</summary>
     internal static void Normalize(AppSettings settings)
     {
         settings.Layout ??= new WindowLayoutSettings();
         settings.Behavior ??= new BehaviorSettings();
         settings.Filters ??= new FilterSettings();
+        if (!Enum.IsDefined(settings.Behavior.ColorMode))
+            settings.Behavior.ColorMode = AppColorMode.System;
         settings.RootFolders ??= [];
         settings.Filters.ExtensionGroups ??= [];
     }

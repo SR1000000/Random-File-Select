@@ -1,4 +1,54 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace Random_File_Select;
+
+/// <summary>Application color theme preference.</summary>
+[JsonConverter(typeof(AppColorModeJsonConverter))]
+public enum AppColorMode
+{
+    System,
+    Light,
+    Dark
+}
+
+/// <summary>Reads and writes <see cref="AppColorMode"/> as a string, falling back to System on invalid values instead of failing the whole settings file.</summary>
+public sealed class AppColorModeJsonConverter : JsonConverter<AppColorMode>
+{
+    /// <summary>Parses a defined enum name or number, or skips the value and returns System when it is invalid.</summary>
+    public override AppColorMode Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        string? text = reader.TokenType switch
+        {
+            JsonTokenType.String => reader.GetString(),
+            JsonTokenType.Number when reader.TryGetInt32(out int number) => number.ToString(),
+            _ => null
+        };
+        reader.Skip();
+
+        return Enum.TryParse(text, ignoreCase: true, out AppColorMode mode) && Enum.IsDefined(mode)
+            ? mode
+            : AppColorMode.System;
+    }
+
+    /// <summary>Writes the enum name as a JSON string.</summary>
+    public override void Write(Utf8JsonWriter writer, AppColorMode value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.ToString());
+    }
+}
+
+/// <summary>Conversion helpers for <see cref="AppColorMode"/>.</summary>
+public static class AppColorModeExtensions
+{
+    /// <summary>Maps the app preference to the WinForms <see cref="SystemColorMode"/>.</summary>
+    public static SystemColorMode ToSystemColorMode(this AppColorMode mode) => mode switch
+    {
+        AppColorMode.Light => SystemColorMode.Classic,
+        AppColorMode.Dark => SystemColorMode.Dark,
+        _ => SystemColorMode.System
+    };
+}
 
 /// <summary>Application configuration container</summary>
 public sealed class AppSettings
@@ -35,11 +85,10 @@ public sealed class WindowPlacementSettings
 /// <summary>User preference flags</summary>
 public sealed class BehaviorSettings
 {
-    public bool LoadRootFoldersOnStart { get; set; }
     public bool ChooseRandomFileAfterDir { get; set; }
     public bool InstantlyOpenChosenFiles { get; set; }
     public bool IncludeSubfolders { get; set; }
-    public bool DarkMode { get; set; }
+    public AppColorMode ColorMode { get; set; } = AppColorMode.System;
     public bool ExcludeDup { get; set; } = true;
     public int LastAccessWeight { get; set; } = 5;
 }

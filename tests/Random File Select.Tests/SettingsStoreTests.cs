@@ -105,11 +105,10 @@ public class SettingsStoreTests : IDisposable
             ],
             Behavior = new BehaviorSettings
             {
-                LoadRootFoldersOnStart = true,
                 ChooseRandomFileAfterDir = false,
                 InstantlyOpenChosenFiles = true,
                 IncludeSubfolders = true,
-                DarkMode = true,
+                ColorMode = AppColorMode.Dark,
                 ExcludeDup = false,
                 LastAccessWeight = 7
             },
@@ -134,8 +133,7 @@ public class SettingsStoreTests : IDisposable
         Assert.Equal(2, loaded.RootFolders.Count);
         Assert.True(loaded.RootFolders[0].IsChecked);
         Assert.False(loaded.RootFolders[1].IsChecked);
-        Assert.True(loaded.Behavior.LoadRootFoldersOnStart);
-        Assert.True(loaded.Behavior.DarkMode);
+        Assert.Equal(AppColorMode.Dark, loaded.Behavior.ColorMode);
         Assert.False(loaded.Behavior.ExcludeDup);
         Assert.Equal(7, loaded.Behavior.LastAccessWeight);
         Assert.Equal("inc", loaded.Filters.Include);
@@ -157,9 +155,48 @@ public class SettingsStoreTests : IDisposable
     [Fact]
     public void Load_olderJsonWithoutExcludeDup_defaultsChecked()
     {
-        File.WriteAllText(_settingsPath, """{ "Behavior": { "DarkMode": false } }""");
+        File.WriteAllText(_settingsPath, """{ "Behavior": { "IncludeSubfolders": false } }""");
 
         Assert.True(new SettingsStore(_settingsPath).Load().Behavior.ExcludeDup);
+    }
+
+    [Fact]
+    public void Load_missingFile_defaultsColorModeToSystem()
+    {
+        Assert.Equal(AppColorMode.System, new SettingsStore(_settingsPath).Load().Behavior.ColorMode);
+    }
+
+    [Theory]
+    [InlineData(AppColorMode.System, SystemColorMode.System)]
+    [InlineData(AppColorMode.Light, SystemColorMode.Classic)]
+    [InlineData(AppColorMode.Dark, SystemColorMode.Dark)]
+    public void SaveLoad_colorMode_roundTripsAndMaps(AppColorMode mode, SystemColorMode expected)
+    {
+        var store = new SettingsStore(_settingsPath);
+        store.Save(new AppSettings { Behavior = new BehaviorSettings { ColorMode = mode } });
+
+        AppColorMode loaded = store.Load().Behavior.ColorMode;
+
+        Assert.Equal(mode, loaded);
+        Assert.Equal(expected, loaded.ToSystemColorMode());
+    }
+
+    [Theory]
+    [InlineData("\"Purple\"")]
+    [InlineData("99")]
+    [InlineData("null")]
+    [InlineData("{ \"x\": 1 }")]
+    public void Load_invalidColorMode_defaultsToSystemAndKeepsOtherSettings(string colorModeJson)
+    {
+        File.WriteAllText(_settingsPath, $$"""
+            { "Behavior": { "ColorMode": {{colorModeJson}}, "LastAccessWeight": 9 }, "Filters": { "Include": "x" } }
+            """);
+
+        AppSettings settings = new SettingsStore(_settingsPath).Load();
+
+        Assert.Equal(AppColorMode.System, settings.Behavior.ColorMode);
+        Assert.Equal(9, settings.Behavior.LastAccessWeight);
+        Assert.Equal("x", settings.Filters.Include);
     }
 
     [Fact]

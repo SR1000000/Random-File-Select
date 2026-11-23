@@ -12,14 +12,10 @@ namespace Random_File_Select
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
 
-            string path = SettingsStore.DefaultFilePath;
-            bool hasSavedSettings = File.Exists(path);
-            var store = new SettingsStore(path);
+            var store = new SettingsStore(SettingsStore.DefaultFilePath);
             AppSettings settings = store.Load();
 
-            Application.SetColorMode(!hasSavedSettings ? SystemColorMode.System
-                : settings.Behavior.DarkMode ? SystemColorMode.Dark
-                : SystemColorMode.Classic);
+            Application.SetColorMode(settings.Behavior.ColorMode.ToSystemColorMode());
 
             Application.Run(new Form1(settings, store));
         }
