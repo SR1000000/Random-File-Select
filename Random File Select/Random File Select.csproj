@@ -11,6 +11,9 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <Product>Random File Select</Product>
+    <Authors>SR1000000</Authors>
   </PropertyGroup>
 
 </Project>

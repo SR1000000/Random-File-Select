@@ -312,7 +312,8 @@ namespace Random_File_Select
 
         private void Settings_button_About_Click(object sender, EventArgs e)
         {
-
+            using var dialog = new AboutDialog();
+            dialog.ShowDialog(this);
         }
 
         private void FileDetails_button_ClearLog_Click(object sender, EventArgs e)
