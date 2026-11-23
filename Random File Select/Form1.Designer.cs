@@ -68,7 +68,7 @@
             FileDetails_button_ClearLog = new Button();
             splitContainerMiddle = new SplitContainer();
             Folders_treeView = new TreeView();
-            Folders_toolStrip = new ToolStrip();
+            Folders_toolStrip = new ClickThroughToolStrip();
             Folders_toolStripButton_Load = new ToolStripButton();
             toolStripSeparator1 = new ToolStripSeparator();
             toolStripLabel1 = new ToolStripLabel();
@@ -76,7 +76,7 @@
             Folders_toolStripButton_Random = new ToolStripButton();
             Folders_toolStripButton_Next = new ToolStripButton();
             Files_listView = new ListView();
-            Files_toolStrip = new ToolStrip();
+            Files_toolStrip = new ClickThroughToolStrip();
             Files_toolStripButton_Load = new ToolStripButton();
             toolStripSeparator2 = new ToolStripSeparator();
             toolStripLabel2 = new ToolStripLabel();
@@ -814,9 +814,9 @@
         private DateTimePicker Filters_dateTimePicker_Min;
         private Label label8;
         private Label label7;
-        private ToolStrip Folders_toolStrip;
+        private ClickThroughToolStrip Folders_toolStrip;
         private ListView Files_listView;
-        private ToolStrip Files_toolStrip;
+        private ClickThroughToolStrip Files_toolStrip;
         private ToolStripButton Folders_toolStripButton_Load;
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripLabel toolStripLabel1;
