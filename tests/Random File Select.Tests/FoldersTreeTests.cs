@@ -53,6 +53,9 @@ public class FoldersTreeTests : IDisposable
     private static FolderScanResult Scan(FileFilter filter, params string[] roots) =>
         FolderTreeBuilder.Scan(roots, filter, CancellationToken.None);
 
+    private static FolderScanResult ScanSub(FileFilter filter, params string[] roots) =>
+        FolderTreeBuilder.Scan(roots, filter, CancellationToken.None, includeSubfolders: true);
+
     private static FolderScanResult Result(
         int matching = 1, int processed = 1, int roots = 1,
         int inaccessible = 0, int link = 0, int missing = 0, double seconds = 1.0) =>
@@ -411,6 +414,70 @@ public class FoldersTreeTests : IDisposable
         FolderNode cNode = Assert.Single(aNode.Children);
         Assert.Equal(Path.Combine("b", "c"), cNode.DisplayName);
         Assert.Equal(2, rootNode.SubtreeFileCount);
+    }
+
+    [Fact]
+    public void Scan_includeSubfolders_branchingIntermediateKept_singleBranchFlattened()
+    {
+        string root = Dir("root");
+        Touch(Dir("root", "branch", "x"), "x.txt");
+        Touch(Dir("root", "branch", "y"), "y.txt");
+        Touch(Dir("root", "single", "only"), "o.txt");
+        Dir("root", "single", "empty");
+
+        FolderNode on = Assert.Single(ScanSub(Txt(), root).Roots);
+        Assert.Equal(["branch", Path.Combine("single", "only")], on.Children.Select(c => c.DisplayName));
+        FolderNode branch = on.Children[0];
+        Assert.Equal(0, branch.OwnFileCount);
+        Assert.Equal(2, branch.SubtreeFileCount);
+        Assert.Equal(["x", "y"], branch.Children.Select(c => c.DisplayName));
+        Assert.Equal(3, ScanSub(Txt(), root).MatchingFolderCount);
+
+        FolderNode off = Assert.Single(Scan(Txt(), root).Roots);
+        Assert.Equal(
+            [Path.Combine("branch", "x"), Path.Combine("branch", "y"), Path.Combine("single", "only")],
+            off.Children.Select(c => c.DisplayName));
+    }
+
+    [Fact]
+    public void Scan_includeSubfolders_chainAboveBranchCollapsesToRelativePath()
+    {
+        string root = Dir("root");
+        Touch(Dir("root", "a", "b", "x"), "x.txt");
+        Touch(Dir("root", "a", "b", "y"), "y.txt");
+
+        FolderNode b = Assert.Single(Assert.Single(ScanSub(Txt(), root).Roots).Children);
+        Assert.Equal(Path.Combine("a", "b"), b.DisplayName);
+        Assert.Equal(["x", "y"], b.Children.Select(c => c.DisplayName));
+    }
+
+    [Fact]
+    public void Scan_includeSubfolders_branchWithFlattenedChild()
+    {
+        string root = Dir("root");
+        Touch(Dir("root", "branch", "left", "deep"), "d.txt");
+        Touch(Dir("root", "branch", "right"), "r.txt");
+
+        FolderNode branch = Assert.Single(Assert.Single(ScanSub(Txt(), root).Roots).Children);
+        Assert.Equal("branch", branch.DisplayName);
+        Assert.Equal([Path.Combine("left", "deep"), "right"], branch.Children.Select(c => c.DisplayName));
+    }
+
+    [Fact]
+    public void Scan_includeSubfolders_nestedBranchingRoot_scannedOnce()
+    {
+        string root = Dir("root");
+        string branch = Dir("root", "branch");
+        Touch(Dir("root", "branch", "x"), "x.txt");
+        Touch(Dir("root", "branch", "y"), "y.txt");
+
+        FolderScanResult result = ScanSub(Txt(), root, branch);
+
+        Assert.Equal(2, result.Roots.Count);
+        Assert.Equal(2, result.MatchingFolderCount);
+        Assert.Equal(4, result.ProcessedCount);
+        Assert.Equal(branch, result.Roots[1].DisplayName);
+        Assert.Equal("branch", Assert.Single(result.Roots[0].Children).DisplayName);
     }
 
     [Fact]

@@ -63,12 +63,13 @@ public sealed class FoldersTreeController
     private void OnTreeBeforeExpandOrCollapse(object? sender, TreeViewCancelEventArgs e)
         => e.Cancel |= _suppressExpandCollapse;
 
-    /// <summary>Scans the roots behind a modal progress dialog, then updates the tree (on success) and the status strip (always).</summary>
+    /// <summary>Scans the roots (honoring the current subfolders option) behind a modal progress dialog, then updates the tree (on success) and the status strip (always).</summary>
     public void Load(IReadOnlyList<string> roots, FileFilter filter)
     {
         // No re-entrancy guard needed: the modal dialog disables the owner form, so a second load cannot start.
+        bool includeSubfolders = _subFoldersCheckBox.Checked; // Read on the UI thread; the scan runs on a worker.
         using var dialog = new FolderLoadProgressDialog(
-            (token, progress) => FolderTreeBuilder.Scan(roots, filter, token, progress));
+            (token, progress) => FolderTreeBuilder.Scan(roots, filter, token, progress, includeSubfolders));
         dialog.ShowDialog(_owner);
 
         FolderLoadOutcome outcome = dialog.Outcome

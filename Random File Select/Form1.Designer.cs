@@ -418,11 +418,11 @@
             // 
             // label5
             // 
-            label5.Location = new Point(143, 118);
+            label5.Location = new Point(135, 116);
             label5.Name = "label5";
-            label5.Size = new Size(57, 32);
+            label5.Size = new Size(69, 32);
             label5.TabIndex = 11;
-            label5.Text = "(Requires Restart)";
+            label5.Text = "<-(Requires Restart)";
             // 
             // Settings_comboBox_DarkLight
             // 

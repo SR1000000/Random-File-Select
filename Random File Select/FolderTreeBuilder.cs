@@ -43,11 +43,7 @@ public sealed record FolderScanResult(
     SkippedCounts Skipped,
     TimeSpan Elapsed);
 
-/// <summary>
-/// Scans checked root folders in a single recursive pass and builds a tree of folders that directly contain matching files.
-/// Do not open or read file contents here. Only directory-listing metadata (name, timestamps, length) may be read,
-/// so the scan never updates a file's Last Accessed time, which later weighting logic depends on.
-/// </summary>
+/// <summary>Scans checked roots in one recursive pass into a tree of folders with matching files (plus branching intermediate folders when subfolders are included); never open or read file contents, only listing metadata, so Last Accessed (used for weighting) is never updated.</summary>
 public static class FolderTreeBuilder
 {
     /// <summary>Trims trailing separators, drops case-insensitive duplicates, and splits roots into input-ordered Ordered, Covering (not under another root), and Nested (under another root).</summary>
@@ -85,17 +81,18 @@ public static class FolderTreeBuilder
         return child.Length > prefix.Length && child.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Scans covering roots once (caching nested roots reached), scans unreached nested roots directly, and returns every root as its own top-level node in input order; throws on cancellation.</summary>
+    /// <summary>Scans covering roots once (caching nested roots reached), scans unreached nested roots directly, and returns every root as its own top-level node in input order; when includeSubfolders is true, folders without own matches that branch into 2+ shown children keep a node; throws on cancellation.</summary>
     public static FolderScanResult Scan(
         IEnumerable<string> roots,
         FileFilter filter,
         CancellationToken cancellationToken,
-        Action<int, string>? progress = null)
+        Action<int, string>? progress = null,
+        bool includeSubfolders = false)
     {
         var stopwatch = Stopwatch.StartNew();
         (IReadOnlyList<string> ordered, IReadOnlyList<string> covering, HashSet<string> nested) = PartitionRoots(roots);
 
-        var scanner = new Scanner(filter, nested, cancellationToken, progress);
+        var scanner = new Scanner(filter, nested, cancellationToken, progress, includeSubfolders);
         var scanned = new Dictionary<string, FolderNode>(StringComparer.OrdinalIgnoreCase);
 
         foreach (string root in covering)
@@ -144,8 +141,8 @@ public static class FolderTreeBuilder
     /// <summary>Mutable accumulator for files and child nodes collected during a single directory enumeration.</summary>
     private sealed record DirectoryScan(List<RetainedFile> Files, List<FolderNode> Nodes);
 
-    /// <summary>Stateful worker that walks the directory tree, enforces filter and skip rules, and accumulates scan counters.</summary>
-    private sealed class Scanner(FileFilter filter, HashSet<string> nestedRoots, CancellationToken token, Action<int, string>? progress)
+    /// <summary>Stateful worker that walks the directory tree, enforces filter and skip rules, decides which folders get nodes, and accumulates scan counters.</summary>
+    private sealed class Scanner(FileFilter filter, HashSet<string> nestedRoots, CancellationToken token, Action<int, string>? progress, bool includeSubfolders)
     {
         /// <summary>Nested roots reached during a pass: key present means reached, null value means reached but skipped.</summary>
         private readonly Dictionary<string, FolderNode?> _nestedRootNodes = new(nestedRoots.Count, StringComparer.OrdinalIgnoreCase);
@@ -208,7 +205,7 @@ public static class FolderTreeBuilder
             progress?.Invoke(ProcessedCount, path);
         }
 
-        /// <summary>Enumerates a directory once, retaining matching files and recursing into subdirectories; null if skipped.</summary>
+        /// <summary>Enumerates a directory once, retaining matching files and recursing into subdirectories and flattening folders that need no node; null if skipped.</summary>
         private DirectoryScan? ScanDirectory(DirectoryInfo directory)
         {
             var files = new List<RetainedFile>();
@@ -274,7 +271,7 @@ public static class FolderTreeBuilder
                     _nestedRootNodes[sub.FullName] = nestedNode;
                 }
 
-                if (child.Files.Count > 0)
+                if (ShouldCreateNode(child))
                     nodes.Add(nestedNode ?? Wrap(sub.FullName, sub.Name, child));
                 else
                     nodes.AddRange(child.Nodes);
@@ -282,6 +279,10 @@ public static class FolderTreeBuilder
 
             return new DirectoryScan(files, nodes);
         }
+
+        /// <summary>Returns true when a scanned subdirectory has matching files of its own, or branches into multiple shown children while subfolders are included.</summary>
+        private bool ShouldCreateNode(DirectoryScan scan) =>
+            scan.Files.Count > 0 || (includeSubfolders && scan.Nodes.Count > 1);
 
         /// <summary>Applies the filter and captures listing metadata; files whose metadata cannot be read are ignored.</summary>
         private bool TryRetain(FileInfo file, [NotNullWhen(true)] out RetainedFile? retained)
