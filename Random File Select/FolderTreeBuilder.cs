@@ -5,10 +5,11 @@ using System.Security;
 
 namespace Random_File_Select;
 
-/// <summary>Compact metadata for one matching file, captured from the directory listing; LastAccessTime is updated when the app opens the file.</summary>
-public sealed record RetainedFile(string FileName, DateTime LastWriteTime, DateTime LastAccessTime, long Length)
+/// <summary>Compact metadata for one matching file, captured from the directory listing and shared by reference between FolderNode and FileRow; LastAccessTime is updated when the app opens the file.</summary>
+public sealed class RetainedFile(string fileName, DateTime lastAccessTime)
 {
-    public DateTime LastAccessTime { get; set; } = LastAccessTime;
+    public string FileName { get; } = fileName;
+    public DateTime LastAccessTime { get; set; } = lastAccessTime;
 }
 
 /// <summary>A file shown in the files ListView: its containing folder's full path plus the RetainedFile instance shared with that FolderNode.</summary>
@@ -62,7 +63,7 @@ public static class FolderTreeBuilder
         var nested = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (string path in ordered)
         {
-            if (ordered.Any(other => !ReferenceEquals(other, path) && IsUnder(path, other)))
+            if (ordered.Any(other => IsUnder(path, other)))
                 nested.Add(path);
             else
                 covering.Add(path);
@@ -93,24 +94,20 @@ public static class FolderTreeBuilder
         (IReadOnlyList<string> ordered, IReadOnlyList<string> covering, HashSet<string> nested) = PartitionRoots(roots);
 
         var scanner = new Scanner(filter, nested, cancellationToken, progress, includeSubfolders);
-        var scanned = new Dictionary<string, FolderNode>(StringComparer.OrdinalIgnoreCase);
 
         foreach (string root in covering)
-        {
-            if (scanner.ScanRoot(root) is { } node)
-                scanned[root] = node;
-        }
+            scanner.ScanRoot(root);
 
         foreach (string root in nested.OrderBy(p => p.Length))
         {
-            if (!scanner.WasReached(root) && scanner.ScanRoot(root) is { } node)
-                scanned[root] = node;
+            if (!scanner.WasReached(root))
+                scanner.ScanRoot(root);
         }
 
         var rootNodes = new List<FolderNode>(ordered.Count);
         foreach (string root in ordered)
         {
-            if (scanned.TryGetValue(root, out FolderNode? node) || scanner.TryGetNestedRootNode(root, out node))
+            if (scanner.TryGetRootNode(root, out FolderNode? node))
                 rootNodes.Add(node);
         }
 
@@ -144,14 +141,16 @@ public static class FolderTreeBuilder
     /// <summary>Stateful worker that walks the directory tree, enforces filter and skip rules, decides which folders get nodes, and accumulates scan counters.</summary>
     private sealed class Scanner(FileFilter filter, HashSet<string> nestedRoots, CancellationToken token, Action<int, string>? progress, bool includeSubfolders)
     {
-        /// <summary>Nested roots reached during a pass: key present means reached, null value means reached but skipped.</summary>
-        private readonly Dictionary<string, FolderNode?> _nestedRootNodes = new(nestedRoots.Count, StringComparer.OrdinalIgnoreCase);
+        /// <summary>Nested roots met while scanning a covering root, whether or not they ended up with a node.</summary>
+        private readonly HashSet<string> _reachedNested = new(nestedRoots.Count, StringComparer.OrdinalIgnoreCase);
 
-        public bool HasUnreachedNestedRoots => _nestedRootNodes.Count < nestedRoots.Count;
-        public bool WasReached(string path) => _nestedRootNodes.ContainsKey(path);
+        /// <summary>Top-level node for every root (covering or nested) that was scanned successfully.</summary>
+        private readonly Dictionary<string, FolderNode> _rootNodes = new(StringComparer.OrdinalIgnoreCase);
 
-        public bool TryGetNestedRootNode(string path, [NotNullWhen(true)] out FolderNode? node) =>
-            _nestedRootNodes.TryGetValue(path, out node) && node is not null;
+        public bool WasReached(string path) => _reachedNested.Contains(path);
+
+        public bool TryGetRootNode(string path, [NotNullWhen(true)] out FolderNode? node) =>
+            _rootNodes.TryGetValue(path, out node);
 
         private static readonly EnumerationOptions Options = new()
         {
@@ -166,8 +165,8 @@ public static class FolderTreeBuilder
         public int Link { get; private set; }
         public int Missing { get; private set; }
 
-        /// <summary>Scans one root; returns its always-shown node, or null when the root is skipped.</summary>
-        public FolderNode? ScanRoot(string path)
+        /// <summary>Scans one root and records its always-shown node in the root map; the root is skipped (and counted) when missing, a link, or inaccessible.</summary>
+        public void ScanRoot(string path)
         {
             token.ThrowIfCancellationRequested();
             Visit(path);
@@ -176,26 +175,50 @@ public static class FolderTreeBuilder
             try
             {
                 directory = new DirectoryInfo(path);
+            }
+            catch (Exception ex) when (IsSkippable(ex))
+            {
+                Inaccessible++;
+                return;
+            }
+
+            if (!TryEnter(directory))
+                return;
+
+            DirectoryScan? scan = ScanDirectory(directory);
+            if (scan is not null)
+                _rootNodes[path] = Wrap(directory.FullName, directory.FullName, scan);
+        }
+
+        /// <summary>Checks that a directory exists and is not a link, counting the skip reason otherwise; returns whether it may be scanned.</summary>
+        private bool TryEnter(DirectoryInfo directory)
+        {
+            try
+            {
                 if (!directory.Exists)
                 {
                     Missing++;
-                    return null;
+                    return false;
                 }
 
                 if (IsLink(directory))
                 {
                     Link++;
-                    return null;
+                    return false;
                 }
+
+                return true;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                Missing++;
+                return false;
             }
             catch (Exception ex) when (IsSkippable(ex))
             {
                 Inaccessible++;
-                return null;
+                return false;
             }
-
-            DirectoryScan? scan = ScanDirectory(directory);
-            return scan is null ? null : Wrap(directory.FullName, directory.FullName, scan);
         }
 
         /// <summary>Increments the processed counter and reports progress.</summary>
@@ -235,6 +258,10 @@ public static class FolderTreeBuilder
                 return null;
             }
 
+            files.Sort((a, b) => CompareNames(a.FileName, b.FileName));
+            if (files.Count > 0)
+                MatchingFolderCount++;
+
             subdirectories.Sort((a, b) => CompareNames(a.Name, b.Name));
             var nodes = new List<FolderNode>();
             foreach (DirectoryInfo sub in subdirectories)
@@ -242,23 +269,14 @@ public static class FolderTreeBuilder
                 token.ThrowIfCancellationRequested();
                 Visit(sub.FullName);
 
-                bool isNestedRoot = HasUnreachedNestedRoots && nestedRoots.Contains(sub.FullName);
+                // Mark a nested root as reached before validating it, so a skipped or linked nested root
+                // is not scanned (and counted) a second time by Scan's fallback loop.
+                bool isNestedRoot = _reachedNested.Count < nestedRoots.Count && nestedRoots.Contains(sub.FullName);
                 if (isNestedRoot)
-                    _nestedRootNodes[sub.FullName] = null;
+                    _reachedNested.Add(sub.FullName);
 
-                try
-                {
-                    if (IsLink(sub))
-                    {
-                        Link++;
-                        continue;
-                    }
-                }
-                catch (Exception ex) when (IsSkippable(ex))
-                {
-                    Inaccessible++;
+                if (!TryEnter(sub))
                     continue;
-                }
 
                 DirectoryScan? child = ScanDirectory(sub);
                 if (child is null)
@@ -268,7 +286,7 @@ public static class FolderTreeBuilder
                 if (isNestedRoot)
                 {
                     nestedNode = Wrap(sub.FullName, sub.FullName, child);
-                    _nestedRootNodes[sub.FullName] = nestedNode;
+                    _rootNodes[sub.FullName] = nestedNode;
                 }
 
                 if (ShouldCreateNode(child))
@@ -293,7 +311,7 @@ public static class FolderTreeBuilder
                 if (!filter.Matches(file))
                     return false;
 
-                retained = new RetainedFile(file.Name, file.LastWriteTime, file.LastAccessTime, file.Length);
+                retained = new RetainedFile(file.Name, file.LastAccessTime);
                 return true;
             }
             catch (Exception ex) when (IsSkippable(ex))
@@ -302,20 +320,19 @@ public static class FolderTreeBuilder
             }
         }
 
-        /// <summary>Builds a node from a directory's own files and shown descendants, relabeling and sorting children; the node may be cached as a top-level nested root.</summary>
-        private FolderNode Wrap(string fullPath, string displayName, DirectoryScan scan)
+        /// <summary>Builds a node from a directory's own (already sorted) files and shown descendants, relabeling children relative to it only when their label differs, then sorting them; the node may be cached as a top-level nested root.</summary>
+        private static FolderNode Wrap(string fullPath, string displayName, DirectoryScan scan)
         {
-            if (scan.Files.Count > 0)
-                MatchingFolderCount++;
+            var children = new List<FolderNode>(scan.Nodes.Count);
+            int subtreeCount = scan.Files.Count;
+            foreach (FolderNode child in scan.Nodes)
+            {
+                string relative = Path.GetRelativePath(fullPath, child.FullPath);
+                children.Add(child.DisplayName == relative ? child : child with { DisplayName = relative });
+                subtreeCount += child.SubtreeFileCount;
+            }
 
-            scan.Files.Sort((a, b) => CompareNames(a.FileName, b.FileName));
-
-            List<FolderNode> children = scan.Nodes
-                .Select(child => child with { DisplayName = Path.GetRelativePath(fullPath, child.FullPath) })
-                .ToList();
             children.Sort((a, b) => CompareNames(a.DisplayName, b.DisplayName));
-
-            int subtreeCount = scan.Files.Count + children.Sum(c => c.SubtreeFileCount);
             return new FolderNode(displayName, fullPath, children, [.. scan.Files], subtreeCount);
         }
     }

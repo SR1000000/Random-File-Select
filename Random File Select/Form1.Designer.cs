@@ -759,7 +759,7 @@
             Controls.Add(Bottom_StatusStrip);
             MinimumSize = new Size(662, 400);
             Name = "Form1";
-            Text = "Random File Selection v1.0.1";
+            Text = "Placeholder (set in program)";
             FormClosing += Form1_FormClosing;
             Load += Form1_Load;
             Shown += Form1_Shown;

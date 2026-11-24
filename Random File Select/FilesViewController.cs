@@ -155,6 +155,7 @@ public sealed class FilesViewController
     {
         string fullPath = row.FullPath;
 
+        // ToolTipText is populated for likely future use; FileDetails_listView.ShowItemToolTips is intentionally off for now.
         var logItem = new ListViewItem(new string[]
         {
             row.FolderPath,
@@ -213,6 +214,8 @@ public sealed class FilesViewController
     /// <summary>Sets the status strip to random or manual selection for the given row.</summary>
     private void SetFileStatus(FileRow row, bool randomChoice)
     {
+        // The status label's ToolTipText is intentionally left untouched by file/log actions: it holds more
+        // valuable context (scan summary or active folder path) set by FoldersTreeController, which should persist.
         _statusLabel.Text = $"{(randomChoice ? "Randomly chose" : "Selected")} \"{row.File.FileName}\".";
     }
 

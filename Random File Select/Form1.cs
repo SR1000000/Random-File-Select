@@ -17,11 +17,18 @@ namespace Random_File_Select
         public Form1(AppSettings settings, ISettingsStore settingsStore)
         {
             InitializeComponent();
+            // Set here rather than in the Designer so the title tracks the assembly's product name and version.
+            Text = $"{Application.ProductName} v{Application.ProductVersion.Split('+')[0]}";
             _settings = settings;
             _settingsStore = settingsStore;
 
             Settings_comboBox_DarkLight.DataSource = Enum.GetValues<AppColorMode>();
-            filtersController = new FiltersController(Filters_comboBox_Extensions);
+            filtersController = new FiltersController(
+                Filters_comboBox_Extensions,
+                Filters_textBox_Include,
+                Filters_textBox_Exclude,
+                Filters_dateTimePicker_Min,
+                Filters_dateTimePicker_Max);
             rootFoldersController = new RootFoldersController(
                 RootFolders_checkedListBox,
                 RootFolders_folderBrowserDialog_Add,
@@ -45,6 +52,8 @@ namespace Random_File_Select
                 Settings_checkBox_Subfolders);
 
             foldersTreeController.FolderActivated += (_, _) => AutoPickFileIfEnabled(true);
+
+            Settings_button_Help.Click += Settings_button_Help_Click;
 
             rootFoldersController.SelectionChanged += (_, _) => UpdateRootFolderButtons();
             UpdateRootFolderButtons();
@@ -78,10 +87,7 @@ namespace Random_File_Select
 
             WindowPlacementSettings? placement = _settings.Layout.WindowPlacement;
             if (placement is not null)
-            {
-                StartPosition = FormStartPosition.Manual;
                 NativeWindowPlacement.Set(Handle, placement);
-            }
         }
 
         private void Form1_Shown(object sender, EventArgs e)
@@ -112,23 +118,7 @@ namespace Random_File_Select
             ApplyColumnWidth(FileDetails_Header_Filename, _settings.Layout.FileDetailsFilenameColumnWidth);
             ApplyColumnWidth(FileDetails_Header_LastAccess, _settings.Layout.FileDetailsLastAccessColumnWidth);
 
-            ApplyFilterSettings(_settings.Filters);
-        }
-
-        /// <summary>Applies filter settings to filter controls.</summary>
-        private void ApplyFilterSettings(FilterSettings filters)
-        {
-            filtersController.Load(filters);
-            Filters_textBox_Include.Text = filters.Include;
-            Filters_textBox_Exclude.Text = filters.Exclude;
-            if (filters.DateModifiedMin.HasValue)
-                Filters_dateTimePicker_Min.Value = filters.DateModifiedMin.Value;
-
-            // DateModifiedMax is never restored; Max always starts at today. Uncheck after assigning Value,
-            // because assigning Value can re-check the box.
-            Filters_dateTimePicker_Max.Value = DateTime.Today;
-            Filters_dateTimePicker_Min.Checked = false;
-            Filters_dateTimePicker_Max.Checked = false;
+            filtersController.Load(_settings.Filters);
         }
 
         /// <summary>Sets a column header width if the specified width is positive.</summary>
@@ -170,18 +160,7 @@ namespace Random_File_Select
             behavior.ExcludeDup = FileDetails_checkBox_ExcludeDup.Checked;
             behavior.LastAccessWeight = Settings_trackBar_LastAccessWeight.Value;
 
-            _settings.Filters = CaptureFilterSettings();
-        }
-
-        /// <summary>Captures text and date filter inputs into a FilterSettings object.</summary>
-        private FilterSettings CaptureFilterSettings()
-        {
-            FilterSettings captured = filtersController.Export();
-            captured.Include = Filters_textBox_Include.Text;
-            captured.Exclude = Filters_textBox_Exclude.Text;
-            captured.DateModifiedMin = Filters_dateTimePicker_Min.Checked ? Filters_dateTimePicker_Min.Value : null;
-            captured.DateModifiedMax = Filters_dateTimePicker_Max.Checked ? Filters_dateTimePicker_Max.Value : null;
-            return captured;
+            _settings.Filters = filtersController.Export();
         }
 
         /// <summary>Sets a SplitContainer splitter distance clamped within valid panel min/max bounds.</summary>
@@ -231,7 +210,7 @@ namespace Random_File_Select
             if (checkedPaths.Count == 0)
                 return;
 
-            FileFilter filter = FileFilter.FromSettings(CaptureFilterSettings());
+            FileFilter filter = FileFilter.FromSettings(filtersController.Export());
             if (!filter.HasExtensionRestriction)
             {
                 MessageBox.Show(
@@ -303,6 +282,21 @@ namespace Random_File_Select
         {
             using var dialog = new AboutDialog();
             dialog.ShowDialog(this);
+        }
+
+        private void Settings_button_Help_Click(object? sender, EventArgs e)
+        {
+            const string steps =
+                "1. Add folders: in the Root Folders panel, click Add and choose a folder to add to the scan. Use Edit or Remove to change the list. Checkmark the folders you want to use.\r\n\r\n" +
+                "2. Set filters (optional): choose or add file extensions (not recommended to have an empty extensions filter), and enter text to include or exclude in names. Set a minimum and maximum date if needed (tick to enable).\r\n\r\n" +
+                "3. Load folders: click Load in the Folders toolbar. The checked root folders are scanned and shown as tree nodes.\r\n\r\n" +
+                "4. Pick a folder: double-click a folder in the tree, or use the Random button in the Folders toolbar.\r\n\r\n" +
+                "5. Randomly select a file: click the Random button in the Files toolbar, or use Previous or Next to step through the list manually. \nMoving the last-access weight slider left favors files you haven't opened recently.\r\n\r\n" +
+                "6. Open the file: double-click it in the bottom Log box, or tick the instant-open option so randomly chosen files open automatically. \nDouble-clicking items in the Files list counts as selecting then opening.\r\n\r\n" +
+                "Tip: Tick \"Choose a random file after selecting a directory\" to pick a file as soon as a folder is chosen. The log lists files you've selected; double-click an entry to open it again. \n" +
+                "Checking the \"Chosen files include those within subfiles\" box allows you to select folders in the tree that have no matching files.";
+
+            MessageBox.Show(this, steps, "How to Use", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void FileDetails_button_ClearLog_Click(object sender, EventArgs e)

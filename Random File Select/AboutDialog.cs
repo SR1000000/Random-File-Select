@@ -51,7 +51,6 @@ public sealed class AboutDialog : Form
         {
             Text = "github.com/SR1000000/Random-File-Select",
             AutoSize = true,
-            LinkColor = Color.FromArgb(0, 102, 204),
         };
         githubLink.Location = new Point(12, descriptionLabel.Bottom + 8);
         githubLink.LinkClicked += (_, _) =>

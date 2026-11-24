@@ -18,17 +18,19 @@ public sealed class AppColorModeJsonConverter : JsonConverter<AppColorMode>
     /// <summary>Parses a defined enum name or number, or skips the value and returns System when it is invalid.</summary>
     public override AppColorMode Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        string? text = reader.TokenType switch
+        AppColorMode mode = AppColorMode.System;
+        switch (reader.TokenType)
         {
-            JsonTokenType.String => reader.GetString(),
-            JsonTokenType.Number when reader.TryGetInt32(out int number) => number.ToString(),
-            _ => null
-        };
-        reader.Skip();
+            case JsonTokenType.String:
+                Enum.TryParse(reader.GetString(), ignoreCase: true, out mode);
+                break;
+            case JsonTokenType.Number when reader.TryGetInt32(out int number):
+                mode = (AppColorMode)number;
+                break;
+        }
 
-        return Enum.TryParse(text, ignoreCase: true, out AppColorMode mode) && Enum.IsDefined(mode)
-            ? mode
-            : AppColorMode.System;
+        reader.Skip();
+        return Enum.IsDefined(mode) ? mode : AppColorMode.System;
     }
 
     /// <summary>Writes the enum name as a JSON string.</summary>

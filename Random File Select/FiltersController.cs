@@ -2,21 +2,73 @@ using System.ComponentModel;
 
 namespace Random_File_Select;
 
-/// <summary>Manages extension filter presets and synchronizes them with the extension ComboBox.</summary>
+/// <summary>Owns all filter inputs (extension presets, include/exclude text, modified-date range) and converts them to and from <see cref="FilterSettings"/>.</summary>
 public sealed class FiltersController
 {
     private readonly ComboBox _extensionsComboBox;
+    private readonly TextBox _includeTextBox;
+    private readonly TextBox _excludeTextBox;
+    private readonly DateTimePicker _minDatePicker;
+    private readonly DateTimePicker _maxDatePicker;
     private BindingList<string> _extensionGroups = [];
 
     /// <summary>Initializes the controller and binds the ComboBox to extension groups.</summary>
-    public FiltersController(ComboBox extensionsComboBox)
+    public FiltersController(
+        ComboBox extensionsComboBox,
+        TextBox includeTextBox,
+        TextBox excludeTextBox,
+        DateTimePicker minDatePicker,
+        DateTimePicker maxDatePicker)
     {
         _extensionsComboBox = extensionsComboBox;
+        _includeTextBox = includeTextBox;
+        _excludeTextBox = excludeTextBox;
+        _minDatePicker = minDatePicker;
+        _maxDatePicker = maxDatePicker;
         InitializeExtensions(null);
     }
 
-    /// <summary>Populates extension groups from settings and selects the active preset.</summary>
+    /// <summary>Populates all filter controls from settings and selects the active extension preset.</summary>
     public void Load(FilterSettings settings)
+    {
+        LoadExtensions(settings);
+
+        _includeTextBox.Text = settings.Include;
+        _excludeTextBox.Text = settings.Exclude;
+
+        if (settings.DateModifiedMin.HasValue)
+        {
+            _minDatePicker.Value = settings.DateModifiedMin.Value;
+            _minDatePicker.Checked = true;
+        }
+        else
+        {
+            _minDatePicker.Checked = false;
+        }
+
+        // DateModifiedMax is never restored; Max always starts at today. Uncheck after assigning Value,
+        // because assigning Value can re-check the box.
+        _maxDatePicker.Value = DateTime.Today;
+        _maxDatePicker.Checked = false;
+    }
+
+    /// <summary>Captures all filter controls into a FilterSettings object.</summary>
+    public FilterSettings Export()
+    {
+        return new FilterSettings
+        {
+            Include = _includeTextBox.Text,
+            Exclude = _excludeTextBox.Text,
+            ExtensionGroups = [.. _extensionGroups],
+            SelectedExtensionGroupIndex = _extensionsComboBox.SelectedIndex,
+            ExtensionFilterText = _extensionsComboBox.Text,
+            DateModifiedMin = _minDatePicker.Checked ? _minDatePicker.Value : null,
+            DateModifiedMax = _maxDatePicker.Checked ? _maxDatePicker.Value : null
+        };
+    }
+
+    /// <summary>Populates extension groups from settings and selects the active preset.</summary>
+    private void LoadExtensions(FilterSettings settings)
     {
         InitializeExtensions(settings.ExtensionGroups);
 
@@ -42,17 +94,6 @@ public sealed class FiltersController
         {
             _extensionsComboBox.SelectedIndex = settings.SelectedExtensionGroupIndex;
         }
-    }
-
-    /// <summary>Exports extension groups and selected index into a FilterSettings object.</summary>
-    public FilterSettings Export()
-    {
-        return new FilterSettings
-        {
-            ExtensionGroups = [.. _extensionGroups],
-            SelectedExtensionGroupIndex = _extensionsComboBox.SelectedIndex,
-            ExtensionFilterText = _extensionsComboBox.Text
-        };
     }
 
     /// <summary>Appends the current ComboBox text to extension groups if non-blank and unique, or selects the existing match.</summary>

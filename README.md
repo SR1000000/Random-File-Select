@@ -4,7 +4,21 @@ You have a collection of files that you want to visit randomly, because surprise
 
 ## Usage
 
+**Warning:** The .exe is unsigned, so Windows Defender (SmartScreen) may flag it or show a warning when it is first run.
 
+1. **Add folders:** In the Root Folders panel, click Add and choose a folder to add to the scan. Use Edit or Remove to change the list. Checkmark the folders you want to use.
+
+2. **Set filters (optional):** Choose or add file extensions (not recommended to have an empty extensions filter), and enter text to include or exclude in names. Set a minimum and maximum date if needed (tick to enable).
+
+3. **Load folders:** Click Load in the Folders toolbar. The checked root folders are scanned and shown as a tree.
+
+4. **Pick a folder:** Double-click a folder in the tree, or use Previous, Random, or Next in the Folders toolbar.
+
+5. **Randomly select a file:** Click the Random button in the Files toolbar, or use Previous or Next to step through the list manually. Moving the last-access weight slider left favors files you haven't opened recently.
+
+6. **Open the file:** Double-click it in the bottom Log box, or tick the instant-open option so randomly chosen files open automatically.  Double-clicking items in the Files list counts as selecting then opening. Checking the \"Chosen files include those within subfiles\" box allows you to select folders in the tree that have no matching files.
+
+**Tip:** Tick "Choose a random file after selecting a directory" to pick a file as soon as a folder is chosen. The log lists files you've selected; double-click an entry to open it again.
 
 This program is built to be portable only.  If you place it in a folder which requires admin privileges to write to (Program Files, etc.), settings will not be saved.
 

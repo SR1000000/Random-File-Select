@@ -39,12 +39,13 @@ public class FoldersTreeTests : IDisposable
         return path;
     }
 
-    private static string Touch(string directory, string name, DateTime? lastWrite = null)
+    private static string Touch(string directory, string name, DateTime? lastAccess = null)
     {
         string path = Path.Combine(directory, name);
         File.WriteAllText(path, "x");
-        if (lastWrite.HasValue)
-            File.SetLastWriteTime(path, lastWrite.Value);
+        // Set after the write, because writing can change the access time.
+        if (lastAccess.HasValue)
+            File.SetLastAccessTime(path, lastAccess.Value);
         return path;
     }
 
@@ -541,11 +542,7 @@ public class FoldersTreeTests : IDisposable
 
         FolderNode node = result.Roots[0];
         Assert.Equal(["a.txt", "b.txt"], node.Files.Select(f => f.FileName));
-        Assert.All(node.Files, f =>
-        {
-            Assert.Equal(stamp, f.LastWriteTime);
-            Assert.Equal(1, f.Length);
-        });
+        Assert.All(node.Files, f => Assert.Equal(stamp, f.LastAccessTime));
         Assert.Equal(2, node.OwnFileCount);
         Assert.Equal(3, node.SubtreeFileCount);
         Assert.Equal(node.OwnFileCount + node.Children.Sum(c => c.SubtreeFileCount), node.SubtreeFileCount);

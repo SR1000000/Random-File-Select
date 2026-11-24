@@ -169,6 +169,8 @@ public sealed class FoldersTreeController
     /// <summary>Replaces the tree contents with one top-level node per root, refreshing the matching-folder cache, inside balanced BeginUpdate/EndUpdate.</summary>
     private void Populate(FolderScanResult result)
     {
+        // The files ListView is intentionally not cleared here: the user may go back and forth between
+        // loading the folder list and working with the current file list without committing to either.
         _matchingNodes.Clear();
         _tree.BeginUpdate();
         try
@@ -192,6 +194,8 @@ public sealed class FoldersTreeController
             ToolTipText = FolderTreeStatusFormatter.FormatNodeTooltip(folder)
         };
 
+        // A nested root also shown under a covering root yields two TreeNodes for the same folder; both are
+        // intentionally added, so random selection weights it accordingly and Previous/Next step through every shown entry.
         if (folder.OwnFileCount > 0)
             _matchingNodes.Add(node);
 
